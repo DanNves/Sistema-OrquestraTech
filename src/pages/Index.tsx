@@ -6,6 +6,8 @@ import ActivityItem from '../components/dashboard/ActivityItem';
 import ChartCard from '../components/dashboard/ChartCard';
 import EventTable from '../components/dashboard/EventTable';
 import ActionButton from '../components/dashboard/ActionButton';
+import EventCalendar from '../components/dashboard/EventCalendar';
+import { Plus, Users, UserClock, BarChart3 } from 'lucide-react';
 
 const Index = () => {
   const statCards = [
@@ -130,28 +132,28 @@ const Index = () => {
   const quickActions = [
     {
       text: 'Criar Novo Evento',
-      icon: 'fa-plus',
+      icon: Plus,
       bgColor: 'bg-primary-50',
       textColor: 'text-primary-600',
       ringColor: 'focus:ring-primary-500',
     },
     {
       text: 'Adicionar Equipe',
-      icon: 'fa-users',
+      icon: Users,
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
       ringColor: 'focus:ring-green-500',
     },
     {
       text: 'Ver Solicitações',
-      icon: 'fa-user-clock',
+      icon: UserClock,
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
       ringColor: 'focus:ring-blue-500',
     },
     {
       text: 'Relatórios',
-      icon: 'fa-chart-bar',
+      icon: BarChart3,
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
       ringColor: 'focus:ring-purple-500',
@@ -167,10 +169,15 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Charts and Recent Activity */}
+      {/* Charts, Calendar and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
         {/* Events Chart */}
         <ChartCard title="Eventos Recentes" />
+        
+        {/* Calendar */}
+        <div className="flex flex-col">
+          <EventCalendar />
+        </div>
 
         {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover">
