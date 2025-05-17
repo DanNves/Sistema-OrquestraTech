@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import StatCard from '../components/dashboard/StatCard';
@@ -7,7 +6,7 @@ import ChartCard from '../components/dashboard/ChartCard';
 import EventTable from '../components/dashboard/EventTable';
 import ActionButton from '../components/dashboard/ActionButton';
 import EventCalendar from '../components/dashboard/EventCalendar';
-import { Plus, Users, UserClock, BarChart3 } from 'lucide-react';
+import { Plus, Users, Clock, BarChart3 } from 'lucide-react';
 
 const Index = () => {
   const statCards = [
@@ -146,7 +145,7 @@ const Index = () => {
     },
     {
       text: 'Ver Solicitações',
-      icon: UserClock,
+      icon: Clock,
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
       ringColor: 'focus:ring-blue-500',

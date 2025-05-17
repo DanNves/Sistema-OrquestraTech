@@ -21,7 +21,6 @@ const EventCalendar = () => {
             onSelect={setDate}
             className="p-3 pointer-events-auto border rounded-md bg-white"
             showOutsideDays={true}
-            locale="pt-BR"
           />
         </div>
       </CardContent>
