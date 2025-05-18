@@ -7,6 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Calendar, Plus, Edit, Trash2, Check, X, Users } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Mock data for events
 const mockEvents = [
@@ -15,7 +23,8 @@ const mockEvents = [
     name: 'Workshop de Mixagem',
     date: '15/06/2025',
     location: 'Estúdio Central',
-    team: 'Equipe de Áudio',
+    responsiblePerson: 'João Silva',
+    teams: ['Equipe de Áudio', 'Equipe de Produção'],
     maxParticipants: 20,
     currentParticipants: 15,
     status: 'active',
@@ -26,7 +35,8 @@ const mockEvents = [
     name: 'Curso de Produção Musical',
     date: '22/06/2025',
     location: 'Sala de Treinamento 3',
-    team: 'Equipe de Produção',
+    responsiblePerson: 'Maria Santos',
+    teams: ['Equipe de Produção'],
     maxParticipants: 15,
     currentParticipants: 12,
     status: 'active',
@@ -37,7 +47,8 @@ const mockEvents = [
     name: 'Encontro Técnico',
     date: '05/07/2025',
     location: 'Auditório Principal',
-    team: 'Equipe Técnica',
+    responsiblePerson: 'Carlos Mendes',
+    teams: ['Equipe Técnica', 'Equipe de Áudio'],
     maxParticipants: 30,
     currentParticipants: 8,
     status: 'pending',
@@ -48,7 +59,8 @@ const mockEvents = [
     name: 'Festival de Música',
     date: '18/07/2025',
     location: 'Praça Central',
-    team: 'Equipe de Sonorização',
+    responsiblePerson: 'Ana Oliveira',
+    teams: ['Equipe de Sonorização', 'Equipe de Iluminação'],
     maxParticipants: 0,
     currentParticipants: 0,
     status: 'pending',
@@ -59,7 +71,8 @@ const mockEvents = [
     name: 'Show ao Vivo',
     date: '10/08/2025',
     location: 'Teatro Municipal',
-    team: 'Equipe de Iluminação',
+    responsiblePerson: 'Ricardo Souza',
+    teams: ['Equipe de Iluminação'],
     maxParticipants: 200,
     currentParticipants: 0,
     status: 'inactive',
@@ -76,6 +89,17 @@ const mockTeams = [
   { id: 5, name: 'Equipe de Iluminação' }
 ];
 
+// Mock data for responsible persons
+const mockResponsiblePersons = [
+  { id: 1, name: 'João Silva' },
+  { id: 2, name: 'Maria Santos' },
+  { id: 3, name: 'Carlos Mendes' },
+  { id: 4, name: 'Ana Oliveira' },
+  { id: 5, name: 'Ricardo Souza' },
+  { id: 6, name: 'Paula Costa' },
+  { id: 7, name: 'Marcos Rocha' }
+];
+
 const Eventos = () => {
   const [events, setEvents] = useState(mockEvents);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,7 +108,8 @@ const Eventos = () => {
     name: '',
     date: '',
     location: '',
-    team: '',
+    responsiblePerson: '',
+    teams: [],
     maxParticipants: 0,
     currentParticipants: 0,
     status: 'pending',
@@ -101,6 +126,25 @@ const Eventos = () => {
     });
   };
 
+  // Handle select for responsible person
+  const handleResponsiblePersonChange = (value) => {
+    setFormData({
+      ...formData,
+      responsiblePerson: value
+    });
+  };
+
+  // Handle team selection (multiple)
+  const handleTeamChange = (teamName) => {
+    setFormData(prev => {
+      const updatedTeams = prev.teams.includes(teamName)
+        ? prev.teams.filter(t => t !== teamName)
+        : [...prev.teams, teamName];
+      
+      return { ...prev, teams: updatedTeams };
+    });
+  };
+
   // Open modal for creating a new event
   const openCreateModal = () => {
     setEditingEvent(null);
@@ -108,7 +152,8 @@ const Eventos = () => {
       name: '',
       date: '',
       location: '',
-      team: '',
+      responsiblePerson: '',
+      teams: [],
       maxParticipants: 0,
       currentParticipants: 0,
       status: 'pending',
@@ -124,7 +169,8 @@ const Eventos = () => {
       name: event.name,
       date: event.date,
       location: event.location,
-      team: event.team,
+      responsiblePerson: event.responsiblePerson,
+      teams: event.teams || [],
       maxParticipants: event.maxParticipants,
       currentParticipants: event.currentParticipants,
       status: event.status,
@@ -228,7 +274,8 @@ const Eventos = () => {
                     <TableHead>Evento</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Local</TableHead>
-                    <TableHead>Equipe</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Equipes</TableHead>
                     <TableHead>Participantes</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
@@ -251,7 +298,16 @@ const Eventos = () => {
                           </div>
                         </TableCell>
                         <TableCell>{event.location}</TableCell>
-                        <TableCell>{event.team}</TableCell>
+                        <TableCell>{event.responsiblePerson}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {event.teams && event.teams.map((team, index) => (
+                              <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                {team}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-1 text-gray-500" />
@@ -306,7 +362,7 @@ const Eventos = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         Nenhum evento encontrado com os filtros atuais.
                       </TableCell>
                     </TableRow>
@@ -367,19 +423,43 @@ const Eventos = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="team">Equipe Responsável</Label>
-                <select 
-                  id="team" 
-                  name="team" 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                  value={formData.team} 
-                  onChange={handleInputChange}
+                <Label htmlFor="responsiblePerson">Pessoa Responsável</Label>
+                <Select 
+                  value={formData.responsiblePerson} 
+                  onValueChange={handleResponsiblePersonChange}
                 >
-                  <option value="">Selecione uma equipe</option>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockResponsiblePersons.map(person => (
+                      <SelectItem key={person.id} value={person.name}>
+                        {person.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Equipes Participantes</Label>
+                <div className="border rounded-md p-3 space-y-2">
                   {mockTeams.map(team => (
-                    <option key={team.id} value={team.name}>{team.name}</option>
+                    <div key={team.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`team-${team.id}`}
+                        checked={formData.teams.includes(team.name)}
+                        onCheckedChange={() => handleTeamChange(team.name)}
+                      />
+                      <label 
+                        htmlFor={`team-${team.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {team.name}
+                      </label>
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -413,17 +493,19 @@ const Eventos = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <select 
-                  id="status" 
-                  name="status" 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                <Select 
                   value={formData.status} 
-                  onChange={handleInputChange}
+                  onValueChange={(value) => setFormData({...formData, status: value})}
                 >
-                  <option value="active">Ativo</option>
-                  <option value="pending">Pendente</option>
-                  <option value="inactive">Inativo</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="inactive">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
