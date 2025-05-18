@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
-import { Calendar, Plus, Edit, Trash2, Check, X, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Plus, Edit, Trash2, Check, X, Users, MapPin, User } from 'lucide-react';
 import { 
   Select,
   SelectContent,
@@ -15,6 +16,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Mock data for events
 const mockEvents = [
@@ -275,16 +282,16 @@ const Eventos = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Local</TableHead>
                     <TableHead>Responsável</TableHead>
-                    <TableHead>Equipes</TableHead>
+                    <TableHead className="text-center">Equipes</TableHead>
                     <TableHead>Participantes</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredEvents.length > 0 ? (
                     filteredEvents.map(event => (
-                      <TableRow key={event.id} className="hover:bg-gray-50">
+                      <TableRow key={event.id} className="hover:bg-gray-50 cursor-pointer">
                         <TableCell>
                           <div>
                             <div className="font-medium">{event.name}</div>
@@ -293,20 +300,30 @@ const Eventos = () => {
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+                            <Calendar className="h-4 w-4 mr-2 text-blue-500" />
                             <span>{event.date}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{event.location}</TableCell>
-                        <TableCell>{event.responsiblePerson}</TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {event.teams && event.teams.map((team, index) => (
-                              <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                {team}
-                              </span>
-                            ))}
+                          <div className="flex items-center">
+                            <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+                            <span>{event.location}</span>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 mr-2 text-blue-500" />
+                            <span>{event.responsiblePerson}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge 
+                            variant="secondary" 
+                            className="flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-800"
+                          >
+                            <Users className="h-3 w-3" />
+                            {event.teams ? event.teams.length : 0}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
@@ -319,44 +336,56 @@ const Eventos = () => {
                         </TableCell>
                         <TableCell>
                           {event.status === 'active' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
                               Ativo
-                            </span>
+                            </Badge>
                           )}
                           {event.status === 'pending' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
                               Pendente
-                            </span>
+                            </Badge>
                           )}
                           {event.status === 'inactive' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                            <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">
                               Inativo
-                            </span>
+                            </Badge>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditModal(event)}>
-                              <span className="sr-only">Editar</span>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" onClick={() => deleteEvent(event.id)}>
-                              <span className="sr-only">Excluir</span>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            {event.status !== 'active' && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-500" onClick={() => toggleStatus(event.id, 'active')}>
-                                <span className="sr-only">Ativar</span>
-                                <Check className="h-4 w-4" />
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menu</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="1" />
+                                  <circle cx="12" cy="5" r="1" />
+                                  <circle cx="12" cy="19" r="1" />
+                                </svg>
                               </Button>
-                            )}
-                            {event.status === 'active' && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500" onClick={() => toggleStatus(event.id, 'inactive')}>
-                                <span className="sr-only">Desativar</span>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px]">
+                              <DropdownMenuItem onClick={() => openEditModal(event)} className="cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Editar</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => deleteEvent(event.id)} className="cursor-pointer text-red-500 focus:text-red-500">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Excluir</span>
+                              </DropdownMenuItem>
+                              {event.status !== 'active' && (
+                                <DropdownMenuItem onClick={() => toggleStatus(event.id, 'active')} className="cursor-pointer text-green-500 focus:text-green-500">
+                                  <Check className="mr-2 h-4 w-4" />
+                                  <span>Ativar</span>
+                                </DropdownMenuItem>
+                              )}
+                              {event.status === 'active' && (
+                                <DropdownMenuItem onClick={() => toggleStatus(event.id, 'inactive')} className="cursor-pointer text-gray-500 focus:text-gray-500">
+                                  <X className="mr-2 h-4 w-4" />
+                                  <span>Desativar</span>
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))

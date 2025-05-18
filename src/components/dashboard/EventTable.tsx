@@ -1,5 +1,13 @@
 
 import React from 'react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Users, Edit, Trash2, Check, X, MoreHorizontal } from 'lucide-react';
 
 interface Event {
   name: string;
@@ -39,27 +47,51 @@ const EventTable: React.FC<EventTableProps> = ({ events }) => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {events.map((event, index) => (
-            <tr key={index} className="table-row-hover">
+            <tr key={index} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-4 whitespace-nowrap">
                 <div className="font-medium text-gray-800">{event.name}</div>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-600">{event.date}</div>
+                <div className="text-sm text-gray-600 flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+                  {event.date}
+                </div>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-600">{event.team}</div>
+                <div className="text-sm text-gray-600 flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-blue-500" />
+                  {event.team}
+                </div>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${event.status.bgColor} ${event.status.textColor}`}
+                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${event.status.bgColor} ${event.status.textColor}`}
                 >
                   {event.status.text}
                 </span>
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="#" className="text-primary-600 hover:text-primary-900">
-                  <i className="fas fa-ellipsis-v"></i>
-                </a>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="focus:outline-none">
+                    <div className="p-1 rounded-full hover:bg-gray-200">
+                      <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                      <Edit className="h-4 w-4" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-red-600">
+                      <Trash2 className="h-4 w-4" /> Excluir
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-green-600">
+                      <Check className="h-4 w-4" /> Ativar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-gray-600">
+                      <X className="h-4 w-4" /> Desativar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </td>
             </tr>
           ))}
