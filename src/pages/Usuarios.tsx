@@ -56,14 +56,17 @@ import {
 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 
-// Mock user data
+// Define the allowed status types
+type UserStatus = 'active' | 'inactive' | 'pending';
+
+// Mock user data with correct typing
 const initialUsers = [
   {
     id: 1,
     name: 'Ana Silva',
     email: 'ana.silva@email.com',
     role: 'Administrador',
-    status: 'active',
+    status: 'active' as UserStatus,
     team: 'Coral',
     lastAccess: '2023-05-18T15:30:22',
     avatar: null,
@@ -73,7 +76,7 @@ const initialUsers = [
     name: 'Pedro Santos',
     email: 'pedro.santos@email.com',
     role: 'Músico',
-    status: 'active',
+    status: 'active' as UserStatus,
     team: 'Banda',
     lastAccess: '2023-05-17T09:15:45',
     avatar: null,
@@ -83,7 +86,7 @@ const initialUsers = [
     name: 'Mariana Costa',
     email: 'mariana.costa@email.com',
     role: 'Líder',
-    status: 'inactive',
+    status: 'inactive' as UserStatus,
     team: 'Coral',
     lastAccess: '2023-05-10T18:22:30',
     avatar: null,
@@ -93,7 +96,7 @@ const initialUsers = [
     name: 'João Oliveira',
     email: 'joao.oliveira@email.com',
     role: 'Músico',
-    status: 'pending',
+    status: 'pending' as UserStatus,
     team: 'Banda',
     lastAccess: '2023-05-15T11:45:12',
     avatar: null,
@@ -103,7 +106,7 @@ const initialUsers = [
     name: 'Larissa Mendes',
     email: 'larissa.mendes@email.com',
     role: 'Técnico',
-    status: 'active',
+    status: 'active' as UserStatus,
     team: 'Técnica',
     lastAccess: '2023-05-18T08:30:00',
     avatar: null,
@@ -113,7 +116,7 @@ const initialUsers = [
     name: 'Rodrigo Lima',
     email: 'rodrigo.lima@email.com',
     role: 'Músico',
-    status: 'inactive',
+    status: 'inactive' as UserStatus,
     team: 'Banda',
     lastAccess: '2023-05-01T14:20:15',
     avatar: null,
@@ -125,7 +128,7 @@ type User = {
   name: string;
   email: string;
   role: string;
-  status: 'active' | 'inactive' | 'pending';
+  status: UserStatus;
   team: string;
   lastAccess: string;
   avatar: string | null;
@@ -136,7 +139,7 @@ type UserFormData = {
   name: string;
   email: string;
   role: string;
-  status: 'active' | 'inactive' | 'pending';
+  status: UserStatus;
   team: string;
 }
 
@@ -204,13 +207,23 @@ const Usuarios = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setCurrentUser(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'status') {
+      // Ensure status is one of the allowed values
+      const typedValue = (value === 'active' || value === 'inactive' || value === 'pending') 
+        ? value as UserStatus 
+        : 'active';
+      setCurrentUser(prev => ({ ...prev, [name]: typedValue }));
+    } else {
+      setCurrentUser(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleStatusChange = (userId: number) => {
     const updatedUsers = users.map(user => {
       if (user.id === userId) {
-        const newStatus = user.status === 'active' ? 'inactive' : 'active';
+        // Ensure we use the correct type for the status
+        const newStatus: UserStatus = user.status === 'active' ? 'inactive' : 'active';
         return { ...user, status: newStatus };
       }
       return user;
@@ -227,7 +240,7 @@ const Usuarios = () => {
     });
   };
 
-  const applyFilters = (userList: User[], query: string, status: string) => {
+  const applyFilters = (userList: User[], query: string, status: string): User[] => {
     let result = [...userList];
     
     // Apply search query
@@ -242,7 +255,9 @@ const Usuarios = () => {
     
     // Apply status filter
     if (status !== 'all') {
-      result = result.filter(user => user.status === status);
+      // Cast status to UserStatus for type safety
+      const typedStatus = status as UserStatus;
+      result = result.filter(user => user.status === typedStatus);
     }
     
     return result;
@@ -275,7 +290,7 @@ const Usuarios = () => {
       });
     } else {
       // Add new user
-      const newUser = {
+      const newUser: User = {
         ...currentUser,
         id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
         lastAccess: '',
@@ -310,7 +325,7 @@ const Usuarios = () => {
   };
 
   // Get status badge color
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: UserStatus) => {
     switch (status) {
       case 'active':
         return (
