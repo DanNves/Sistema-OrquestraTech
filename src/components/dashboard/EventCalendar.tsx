@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -95,9 +94,9 @@ const EventCalendar = () => {
         <CalendarCheck className="h-5 w-5 text-primary-600" />
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-row gap-6">
           {/* Calendar - Expanded to take more width */}
-          <div className="flex-1 max-w-none">
+          <div className="flex-1">
             <Popover open={showPopover} onOpenChange={setShowPopover}>
               <PopoverTrigger asChild>
                 <div className="cursor-default w-full">
@@ -105,7 +104,7 @@ const EventCalendar = () => {
                     mode="single"
                     selected={date}
                     onSelect={handleDateSelect}
-                    className="p-3 pointer-events-auto border rounded-md bg-white w-full max-w-none"
+                    className="p-0 w-full max-w-none"
                     showOutsideDays={true}
                     modifiers={modifiers}
                     modifiersStyles={modifiersStyles}
@@ -140,8 +139,8 @@ const EventCalendar = () => {
             </Popover>
           </div>
           
-          {/* Legend for calendar events - Reduced width to give more space to calendar */}
-          <div className="flex flex-col justify-start mt-4 space-y-3 min-w-[100px]">
+          {/* Legend for calendar events - Moved to the right */}
+          <div className="flex flex-col justify-start mt-4 space-y-3 min-w-[120px]">
             <h3 className="text-sm font-medium text-gray-700">Legenda</h3>
             <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 mr-2"></div>
