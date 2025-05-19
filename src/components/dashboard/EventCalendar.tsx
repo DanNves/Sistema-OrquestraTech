@@ -95,9 +95,9 @@ const EventCalendar = () => {
         <CalendarCheck className="h-5 w-5 text-primary-600" />
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row gap-4">
           {/* Calendar - Expanded to take more width */}
-          <div className="flex-1 w-[90%]">
+          <div className="flex-1 max-w-none">
             <Popover open={showPopover} onOpenChange={setShowPopover}>
               <PopoverTrigger asChild>
                 <div className="cursor-default w-full">
@@ -105,7 +105,7 @@ const EventCalendar = () => {
                     mode="single"
                     selected={date}
                     onSelect={handleDateSelect}
-                    className="p-2 pointer-events-auto border rounded-md bg-white w-full max-w-none scale-105 origin-top-left"
+                    className="p-3 pointer-events-auto border rounded-md bg-white w-full max-w-none"
                     showOutsideDays={true}
                     modifiers={modifiers}
                     modifiersStyles={modifiersStyles}
@@ -140,23 +140,23 @@ const EventCalendar = () => {
             </Popover>
           </div>
           
-          {/* Legend for calendar events - Further reduced width */}
-          <div className="flex flex-col justify-start mt-4 space-y-2.5 min-w-[10%] text-xs">
-            <h3 className="text-xs font-medium text-gray-700">Legenda</h3>
+          {/* Legend for calendar events - Reduced width to give more space to calendar */}
+          <div className="flex flex-col justify-start mt-4 space-y-3 min-w-[100px]">
+            <h3 className="text-sm font-medium text-gray-700">Legenda</h3>
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-green-100 border-2 border-green-500 mr-1.5"></div>
-              <span className="text-xs">Confirmado</span>
+              <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 mr-2"></div>
+              <span className="text-sm">Confirmado</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-yellow-100 border-2 border-yellow-400 mr-1.5"></div>
-              <span className="text-xs">Pendente</span>
+              <div className="w-4 h-4 rounded-full bg-yellow-100 border-2 border-yellow-400 mr-2"></div>
+              <span className="text-sm">Pendente</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-red-100 border-2 border-red-500 mr-1.5"></div>
-              <span className="text-xs">Cancelado</span>
+              <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 mr-2"></div>
+              <span className="text-sm">Cancelado</span>
             </div>
-            <div className="mt-2 text-[10px] text-gray-500">
-              Clique em uma data para ver os eventos.
+            <div className="mt-4 text-xs text-gray-500">
+              Clique em uma data para ver os eventos agendados.
             </div>
           </div>
         </div>
