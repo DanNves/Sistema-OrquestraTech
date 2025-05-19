@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import StatCard from '../components/dashboard/StatCard';
@@ -135,6 +136,8 @@ const Index = () => {
       bgColor: 'bg-primary-50',
       textColor: 'text-primary-600',
       ringColor: 'focus:ring-primary-500',
+      action: 'navigate',
+      destination: '/eventos',
     },
     {
       text: 'Adicionar Equipe',
@@ -142,6 +145,8 @@ const Index = () => {
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
       ringColor: 'focus:ring-green-500',
+      action: 'navigate',
+      destination: '/equipes',
     },
     {
       text: 'Ver Solicitações',
@@ -149,6 +154,8 @@ const Index = () => {
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
       ringColor: 'focus:ring-blue-500',
+      action: 'toast',
+      message: 'Visualizando solicitações pendentes...',
     },
     {
       text: 'Relatórios',
@@ -156,6 +163,8 @@ const Index = () => {
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
       ringColor: 'focus:ring-purple-500',
+      action: 'toast',
+      message: 'Gerando relatórios...',
     },
   ];
 
