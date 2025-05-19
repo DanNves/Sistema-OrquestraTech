@@ -1,9 +1,7 @@
-
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import StatCard from '../components/dashboard/StatCard';
 import ActivityItem from '../components/dashboard/ActivityItem';
-import ChartCard from '../components/dashboard/ChartCard';
 import EventTable from '../components/dashboard/EventTable';
 import ActionButton from '../components/dashboard/ActionButton';
 import EventCalendar from '../components/dashboard/EventCalendar';
@@ -177,13 +175,10 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Charts, Calendar and Recent Activity */}
+      {/* Calendar and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
-        {/* Events Chart */}
-        <ChartCard title="Eventos Recentes" />
-        
-        {/* Calendar */}
-        <div className="flex flex-col">
+        {/* Calendar - Now takes 2 columns */}
+        <div className="lg:col-span-2">
           <EventCalendar />
         </div>
 
