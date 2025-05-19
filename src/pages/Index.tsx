@@ -136,7 +136,7 @@ const Index = () => {
       bgColor: 'bg-primary-50',
       textColor: 'text-primary-600',
       ringColor: 'focus:ring-primary-500',
-      action: 'navigate',
+      action: 'navigate' as const, // Explicitly typing as const
       destination: '/eventos',
     },
     {
@@ -145,7 +145,7 @@ const Index = () => {
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
       ringColor: 'focus:ring-green-500',
-      action: 'navigate',
+      action: 'navigate' as const, // Explicitly typing as const
       destination: '/equipes',
     },
     {
@@ -154,7 +154,7 @@ const Index = () => {
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
       ringColor: 'focus:ring-blue-500',
-      action: 'toast',
+      action: 'toast' as const, // Explicitly typing as const
       message: 'Visualizando solicitações pendentes...',
     },
     {
@@ -163,7 +163,7 @@ const Index = () => {
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
       ringColor: 'focus:ring-purple-500',
-      action: 'toast',
+      action: 'toast' as const, // Explicitly typing as const
       message: 'Gerando relatórios...',
     },
   ];
