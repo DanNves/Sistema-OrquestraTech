@@ -5,11 +5,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent
-} from "@/components/ui/hover-card";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+  Popover, 
+  PopoverTrigger, 
+  PopoverContent 
+} from "@/components/ui/popover";
 
 // Define event types with status and dates
 interface EventWithDate {
@@ -96,17 +95,17 @@ const EventCalendar = () => {
         <CalendarCheck className="h-5 w-5 text-primary-600" />
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="flex flex-row gap-6">
-          {/* Calendar */}
-          <div className="flex-1">
+        <div className="flex flex-row gap-4">
+          {/* Calendar - Expanded to take more width */}
+          <div className="flex-1 max-w-none">
             <Popover open={showPopover} onOpenChange={setShowPopover}>
               <PopoverTrigger asChild>
-                <div className="cursor-default">
+                <div className="cursor-default w-full">
                   <Calendar
                     mode="single"
                     selected={date}
                     onSelect={handleDateSelect}
-                    className="p-3 pointer-events-auto border rounded-md bg-white"
+                    className="p-3 pointer-events-auto border rounded-md bg-white w-full max-w-none"
                     showOutsideDays={true}
                     modifiers={modifiers}
                     modifiersStyles={modifiersStyles}
@@ -141,19 +140,19 @@ const EventCalendar = () => {
             </Popover>
           </div>
           
-          {/* Legend for calendar events */}
-          <div className="flex flex-col justify-start mt-4 space-y-3 min-w-[120px]">
+          {/* Legend for calendar events - Reduced width to give more space to calendar */}
+          <div className="flex flex-col justify-start mt-4 space-y-3 min-w-[100px]">
             <h3 className="text-sm font-medium text-gray-700">Legenda</h3>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full bg-green-100 border border-green-500 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 mr-2"></div>
               <span className="text-sm">Confirmado</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full bg-yellow-100 border border-yellow-400 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-yellow-100 border-2 border-yellow-400 mr-2"></div>
               <span className="text-sm">Pendente</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full bg-red-100 border border-red-500 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 mr-2"></div>
               <span className="text-sm">Cancelado</span>
             </div>
             <div className="mt-4 text-xs text-gray-500">
