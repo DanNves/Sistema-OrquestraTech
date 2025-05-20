@@ -82,7 +82,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+        dark: {
+          100: '#1E1F25', // Main dark background
+          200: '#232631', // Card background
+          300: '#2D303E', // Hover state
+          400: '#4D5264', // Border color
+          foreground: '#E8E9EC', // Text color
+          muted: '#9DA4AE', // Secondary text
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -94,6 +102,7 @@ export default {
 			boxShadow: {
 				'soft': '0 2px 15px rgba(0, 0, 0, 0.05)',
 				'elevated': '0 10px 30px rgba(0, 0, 0, 0.08)',
+        'dark': '0 4px 12px rgba(0, 0, 0, 0.3)',
 			},
 			keyframes: {
 				'accordion-down': {
