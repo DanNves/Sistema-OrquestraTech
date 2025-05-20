@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,9 @@ import {
   Shield, 
   Mail, 
   UserCheck,
-  UserX
+  UserX,
+  Check,
+  X
 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 
@@ -148,9 +149,12 @@ const Usuarios = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>(initialUsers);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [userToApprove, setUserToApprove] = useState<User | null>(null);
+  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject'>('approve');
   const [currentUser, setCurrentUser] = useState<UserFormData>({
     name: '',
     email: '',
@@ -159,6 +163,7 @@ const Usuarios = () => {
     team: ''
   });
   const [isEditMode, setIsEditMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('todos');
 
   // Handler functions
   const handleAddUser = () => {
@@ -308,6 +313,39 @@ const Usuarios = () => {
     setIsAddUserOpen(false);
   };
 
+  const handleApprovalClick = (user: User, action: 'approve' | 'reject') => {
+    setUserToApprove(user);
+    setApprovalAction(action);
+    setIsApprovalDialogOpen(true);
+  };
+
+  const handleApprovalConfirm = () => {
+    if (!userToApprove) return;
+    
+    const updatedUsers = users.map(user => {
+      if (user.id === userToApprove.id) {
+        return {
+          ...user,
+          status: approvalAction === 'approve' ? 'active' as UserStatus : 'inactive' as UserStatus
+        };
+      }
+      return user;
+    });
+    
+    setUsers(updatedUsers);
+    setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
+    
+    toast({
+      title: approvalAction === 'approve' ? "Usuário aprovado" : "Usuário rejeitado",
+      description: approvalAction === 'approve' 
+        ? `${userToApprove.name} foi aprovado e está ativo no sistema.`
+        : `${userToApprove.name} foi rejeitado e está inativo no sistema.`,
+    });
+    
+    setIsApprovalDialogOpen(false);
+    setUserToApprove(null);
+  };
+
   // Get the formatted date for display
   const getFormattedDate = (dateString: string) => {
     if (!dateString) return 'Nunca acessou';
@@ -357,6 +395,9 @@ const Usuarios = () => {
   const availableRoles = ['Administrador', 'Líder', 'Músico', 'Técnico', 'Voluntário'];
   const availableTeams = ['Coral', 'Banda', 'Técnica', 'Mídias', 'Administração'];
 
+  // Filter users with pending status for the approval section
+  const pendingUsers = users.filter(user => user.status === 'pending');
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -376,176 +417,281 @@ const Usuarios = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {/* Search and filter section */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="text"
-                    placeholder="Buscar usuários..."
-                    className="pl-9"
-                    value={searchQuery}
-                    onChange={handleSearch}
-                  />
+            <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList className="grid grid-cols-2 md:w-[400px] mb-4">
+                <TabsTrigger value="todos">Todos os Usuários</TabsTrigger>
+                <TabsTrigger 
+                  value="pendentes" 
+                  className="relative"
+                >
+                  Solicitações Pendentes
+                  {pendingUsers.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {pendingUsers.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="todos" className="space-y-4">
+                {/* Search and filter section */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar usuários..."
+                      className="pl-9"
+                      value={searchQuery}
+                      onChange={handleSearch}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={statusFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('all')}
+                      className="whitespace-nowrap"
+                    >
+                      Todos
+                    </Button>
+                    <Button
+                      variant={statusFilter === 'active' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('active')}
+                      className="whitespace-nowrap"
+                    >
+                      <UserCheck className="w-4 h-4 mr-1" /> Ativos
+                    </Button>
+                    <Button
+                      variant={statusFilter === 'inactive' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('inactive')}
+                      className="whitespace-nowrap"
+                    >
+                      <UserX className="w-4 h-4 mr-1" /> Inativos
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={statusFilter === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('all')}
-                    className="whitespace-nowrap"
-                  >
-                    Todos
-                  </Button>
-                  <Button
-                    variant={statusFilter === 'active' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('active')}
-                    className="whitespace-nowrap"
-                  >
-                    <UserCheck className="w-4 h-4 mr-1" /> Ativos
-                  </Button>
-                  <Button
-                    variant={statusFilter === 'inactive' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFilterChange('inactive')}
-                    className="whitespace-nowrap"
-                  >
-                    <UserX className="w-4 h-4 mr-1" /> Inativos
-                  </Button>
-                </div>
-              </div>
 
-              {/* Users table */}
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead className="hidden md:table-cell">Função</TableHead>
-                      <TableHead className="hidden md:table-cell">Equipe</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.length > 0 ? (
-                      filteredUsers.map((user) => (
-                        <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                                {user.avatar ? (
-                                  <img 
-                                    src={user.avatar} 
-                                    alt={user.name}
-                                    className="h-full w-full object-cover rounded-full"
-                                  />
-                                ) : (
-                                  <User className="h-5 w-5" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <div className="flex items-center gap-2">
-                              <Shield className="h-4 w-4 text-primary-600" />
-                              {user.role}
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{user.team}</TableCell>
-                          <TableCell>
-                            {getStatusBadge(user.status)}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-sm">
-                            {getFormattedDate(user.lastAccess)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-5 w-5" />
-                                  <span className="sr-only">Open menu</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-white">
-                                <DropdownMenuItem 
-                                  className="cursor-pointer flex items-center gap-2"
-                                  onClick={() => handleEditUser(user)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  <span>Editar</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer flex items-center gap-2"
-                                  onClick={() => handleStatusChange(user.id)}
-                                >
-                                  {user.status === 'active' ? (
-                                    <>
-                                      <UserX className="h-4 w-4 text-amber-600" />
-                                      <span className="text-amber-600">Desativar</span>
-                                    </>
+                {/* Users table - All users */}
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead className="hidden md:table-cell">Função</TableHead>
+                        <TableHead className="hidden md:table-cell">Equipe</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.length > 0 ? (
+                        filteredUsers.map((user) => (
+                          <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                                  {user.avatar ? (
+                                    <img 
+                                      src={user.avatar} 
+                                      alt={user.name}
+                                      className="h-full w-full object-cover rounded-full"
+                                    />
                                   ) : (
-                                    <>
-                                      <UserCheck className="h-4 w-4 text-green-600" />
-                                      <span className="text-green-600">Ativar</span>
-                                    </>
+                                    <User className="h-5 w-5" />
                                   )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer flex items-center gap-2 text-red-600"
-                                  onClick={() => handleDeleteClick(user.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span>Excluir</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                </div>
+                                <div>
+                                  <div className="font-medium text-gray-900">{user.name}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4 text-primary-600" />
+                                {user.role}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">{user.team}</TableCell>
+                            <TableCell>
+                              {getStatusBadge(user.status)}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm">
+                              {getFormattedDate(user.lastAccess)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-5 w-5" />
+                                    <span className="sr-only">Open menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-white">
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer flex items-center gap-2"
+                                    onClick={() => handleEditUser(user)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    <span>Editar</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer flex items-center gap-2"
+                                    onClick={() => handleStatusChange(user.id)}
+                                  >
+                                    {user.status === 'active' ? (
+                                      <>
+                                        <UserX className="h-4 w-4 text-amber-600" />
+                                        <span className="text-amber-600">Desativar</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <UserCheck className="h-4 w-4 text-green-600" />
+                                        <span className="text-green-600">Ativar</span>
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer flex items-center gap-2 text-red-600"
+                                    onClick={() => handleDeleteClick(user.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Excluir</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10">
+                            <div className="flex flex-col items-center justify-center text-gray-500">
+                              <User className="h-10 w-10 mb-2" />
+                              <h3 className="text-lg font-medium">Nenhum usuário encontrado</h3>
+                              <p>Tente ajustar os filtros ou adicione um novo usuário.</p>
+                            </div>
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10">
-                          <div className="flex flex-col items-center justify-center text-gray-500">
-                            <User className="h-10 w-10 mb-2" />
-                            <h3 className="text-lg font-medium">Nenhum usuário encontrado</h3>
-                            <p>Tente ajustar os filtros ou adicione um novo usuário.</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
 
-              {/* Pagination */}
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious href="#" />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#" isActive>1</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#">2</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#">3</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext href="#" />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
+                {/* Pagination */}
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href="#" />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink href="#" isActive>1</PaginationLink>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink href="#">2</PaginationLink>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink href="#">3</PaginationLink>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext href="#" />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </TabsContent>
+              
+              {/* Pending Approvals Tab */}
+              <TabsContent value="pendentes" className="space-y-4">
+                <Card className="border-yellow-200 bg-yellow-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl text-yellow-800">Solicitações Pendentes</CardTitle>
+                    <CardDescription className="text-yellow-700">
+                      Aprove ou rejeite os usuários que solicitaram acesso ao sistema
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {pendingUsers.length > 0 ? (
+                      <div className="border rounded-md bg-white">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Usuário</TableHead>
+                              <TableHead className="hidden md:table-cell">Função</TableHead>
+                              <TableHead className="hidden md:table-cell">Equipe</TableHead>
+                              <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {pendingUsers.map((user) => (
+                              <TableRow key={user.id} className="hover:bg-yellow-50/50 transition-colors">
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                                      {user.avatar ? (
+                                        <img 
+                                          src={user.avatar} 
+                                          alt={user.name}
+                                          className="h-full w-full object-cover rounded-full"
+                                        />
+                                      ) : (
+                                        <User className="h-5 w-5" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-gray-900">{user.name}</div>
+                                      <div className="text-sm text-gray-500">{user.email}</div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell">
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4 text-yellow-600" />
+                                    {user.role}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell">{user.team}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-red-600 border-red-200 hover:bg-red-50"
+                                      onClick={() => handleApprovalClick(user, 'reject')}
+                                    >
+                                      <X className="h-4 w-4 mr-1" />
+                                      Rejeitar
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-green-600 border-green-200 hover:bg-green-50"
+                                      onClick={() => handleApprovalClick(user, 'approve')}
+                                    >
+                                      <Check className="h-4 w-4 mr-1" />
+                                      Aprovar
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <UserCheck className="h-12 w-12 text-green-500 mb-2" />
+                        <h3 className="text-lg font-medium">Não há solicitações pendentes</h3>
+                        <p className="text-gray-500">Todas as solicitações de usuários foram processadas.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
@@ -678,6 +824,34 @@ const Usuarios = () => {
               </Button>
               <Button variant="destructive" onClick={handleDeleteConfirm}>
                 Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Approval/Rejection Confirmation Dialog */}
+        <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {approvalAction === 'approve' ? 'Confirmar aprovação' : 'Confirmar rejeição'}
+              </DialogTitle>
+              <DialogDescription>
+                {approvalAction === 'approve'
+                  ? `Você está prestes a aprovar o acesso de ${userToApprove?.name}. Confirmar?`
+                  : `Você está prestes a rejeitar o acesso de ${userToApprove?.name}. Confirmar?`
+                }
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsApprovalDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                variant={approvalAction === 'approve' ? 'default' : 'destructive'} 
+                onClick={handleApprovalConfirm}
+              >
+                {approvalAction === 'approve' ? 'Aprovar' : 'Rejeitar'}
               </Button>
             </DialogFooter>
           </DialogContent>
