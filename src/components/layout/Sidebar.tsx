@@ -9,7 +9,8 @@ import {
   Settings, 
   ChevronLeft,
   ChevronRight,
-  Music
+  Music,
+  User
 } from 'lucide-react';
 
 interface SidebarProps {
