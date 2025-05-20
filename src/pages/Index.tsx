@@ -152,8 +152,8 @@ const Index = () => {
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
       ringColor: 'focus:ring-blue-500',
-      action: 'toast' as const, // Explicitly typing as const
-      message: 'Visualizando solicitações pendentes...',
+      action: 'navigate' as const, // Changed from 'toast' to 'navigate'
+      destination: '/usuarios', // Added destination to users page
     },
     {
       text: 'Relatórios',
