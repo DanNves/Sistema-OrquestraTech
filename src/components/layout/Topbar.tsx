@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Sun, Moon, ChevronDown, Search, User } from 'lucide-react';
+import { Bell, Sun, Moon, ChevronDown, Search, User, Settings } from 'lucide-react';
 
 interface TopbarProps {
   pageName: string;
@@ -10,7 +10,7 @@ interface TopbarProps {
 const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -38,16 +38,12 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
   }, []);
 
   useEffect(() => {
-    // Check if user has dark mode preference
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
-                  window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(isDark);
+    // Set dark mode by default
+    setIsDarkMode(true);
+    document.documentElement.classList.add('dark');
     
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // Store preference
+    localStorage.setItem('darkMode', 'true');
   }, []);
 
   const toggleNotifications = (e: React.MouseEvent) => {
@@ -75,11 +71,11 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
   };
 
   return (
-    <div className="bg-card shadow-soft p-4 flex justify-between items-center sticky top-0 z-10">
+    <div className="bg-[#131b2e] shadow-soft p-4 flex justify-between items-center sticky top-0 z-10 border-b border-[#1f2b45]">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleMobileMenu}
-          className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+          className="md:hidden text-gray-400 hover:text-white focus:outline-none"
           aria-label="Open menu"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -88,17 +84,17 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
-        <h1 className="text-xl font-medium text-gray-800 dark:text-gray-100">{pageName}</h1>
+        <h1 className="text-xl font-medium text-white">{pageName}</h1>
       </div>
       
       <div className="hidden md:flex relative mx-auto max-w-md w-full px-4">
         <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Search className="w-5 h-5 text-gray-400" />
+            <Search className="w-5 h-5 text-gray-500" />
           </div>
           <input
             type="text"
-            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2.5"
+            className="bg-[#1a223f] border border-[#1f2b45] text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
             placeholder="Search..."
           />
         </div>
@@ -107,7 +103,7 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
       <div className="flex items-center space-x-3">
         <button 
           onClick={toggleDarkMode}
-          className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
+          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a223f] focus:outline-none"
           aria-label="Toggle dark mode"
         >
           {isDarkMode ? (
@@ -120,7 +116,7 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
         <div className="relative" ref={notificationsRef}>
           <button
             onClick={toggleNotifications}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 relative focus:outline-none"
+            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#1a223f] relative focus:outline-none"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -129,37 +125,37 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
             </span>
           </button>
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-card rounded-lg shadow-elevated py-1 z-20 animate-slide-down border border-gray-100/50 dark:border-gray-700/50">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50">
-                <p className="font-medium text-gray-800 dark:text-gray-100">Notificações</p>
+            <div className="absolute right-0 mt-2 w-80 bg-[#131b2e] rounded-lg shadow-elevated py-1 z-20 animate-slide-down border border-[#1f2b45]">
+              <div className="px-4 py-3 border-b border-[#1f2b45]">
+                <p className="font-medium text-white">Notificações</p>
               </div>
               <div className="max-h-96 overflow-y-auto">
                 <a
                   href="#"
-                  className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100/50 dark:border-gray-700/50"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-[#1a223f] transition-colors border-b border-[#1f2b45]"
                 >
                   <p className="font-medium">Novo usuário solicitou acesso</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">5 minutos atrás</p>
+                  <p className="text-xs text-gray-400 mt-1">5 minutos atrás</p>
                 </a>
                 <a
                   href="#"
-                  className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100/50 dark:border-gray-700/50"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-[#1a223f] transition-colors border-b border-[#1f2b45]"
                 >
-                  <p className="font-medium">Evento "Mixagem Avançada" amanhã</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">2 horas atrás</p>
+                  <p className="font-medium">Novo evento criado</p>
+                  <p className="text-xs text-gray-400 mt-1">2 horas atrás</p>
                 </a>
                 <a
                   href="#"
-                  className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-[#1a223f] transition-colors"
                 >
                   <p className="font-medium">2 novos membros na equipe</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ontem às 16:45</p>
+                  <p className="text-xs text-gray-400 mt-1">Ontem às 16:45</p>
                 </a>
               </div>
-              <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-3">
+              <div className="border-t border-[#1f2b45] px-4 py-3">
                 <a
                   href="#"
-                  className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-medium"
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium"
                 >
                   Ver todas
                 </a>
@@ -171,24 +167,24 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
         <div className="relative" ref={profileRef}>
           <button
             onClick={toggleProfile}
-            className="flex items-center gap-2 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
+            className="flex items-center gap-2 p-2 rounded-lg text-gray-300 hover:bg-[#1a223f] focus:outline-none"
             aria-label="User profile"
           >
-            <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+            <div className="h-8 w-8 rounded-full bg-blue-800/30 flex items-center justify-center">
+              <User className="h-4 w-4 text-blue-400" />
             </div>
             <span className="hidden md:inline font-medium">Admin</span>
             <ChevronDown className="hidden md:inline h-4 w-4" />
           </button>
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-card rounded-lg shadow-elevated py-1 z-20 animate-slide-down border border-gray-100/50 dark:border-gray-700/50">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50">
-                <p className="font-medium text-gray-800 dark:text-gray-100">Admin</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">admin@musictech.com</p>
+            <div className="absolute right-0 mt-2 w-56 bg-[#131b2e] rounded-lg shadow-elevated py-1 z-20 animate-slide-down border border-[#1f2b45]">
+              <div className="px-4 py-3 border-b border-[#1f2b45]">
+                <p className="font-medium text-white">Admin</p>
+                <p className="text-xs text-gray-400">admin@musictech.com</p>
               </div>
               <a
                 href="#"
-                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="block px-4 py-2 text-sm text-gray-300 hover:bg-[#1a223f] transition-colors"
               >
                 <div className="flex items-center">
                   <User className="h-4 w-4 mr-2" />
@@ -197,17 +193,17 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
               </a>
               <a
                 href="#"
-                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="block px-4 py-2 text-sm text-gray-300 hover:bg-[#1a223f] transition-colors"
               >
                 <div className="flex items-center">
                   <Settings className="h-4 w-4 mr-2" />
                   Configurações
                 </div>
               </a>
-              <div className="border-t border-gray-100 dark:border-gray-700/50">
+              <div className="border-t border-[#1f2b45]">
                 <a
                   href="#"
-                  className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="block px-4 py-2 text-sm text-red-400 hover:bg-[#1a223f] transition-colors"
                 >
                   <div className="flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">

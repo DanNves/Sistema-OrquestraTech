@@ -29,16 +29,16 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					50: '#f0f7ff',
-					100: '#e0effe',
-					200: '#b9ddfe',
-					300: '#7cc2fd',
-					400: '#36a4f9',
-					500: '#0d89eb',
-					600: '#006dcb',
-					700: '#0057a5',
-					800: '#064b87',
-					900: '#0b3f70',
+					50: '#e6f0ff',
+					100: '#cce0ff',
+					200: '#99c2ff',
+					300: '#66a3ff',
+					400: '#3385ff',
+					500: '#0066ff',
+					600: '#0052cc',
+					700: '#003d99',
+					800: '#002966',
+					900: '#001433',
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
@@ -52,7 +52,7 @@ export default {
 					600: '#7285a0',
 					700: '#637592',
 					800: '#4e5d75',
-					900: '#394455',
+					900: '#131b2e',
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
@@ -85,6 +85,11 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				status: {
+					active: '#25b860',
+					inactive: '#f26464',
+					pending: '#ffc107',
 				}
 			},
 			borderRadius: {

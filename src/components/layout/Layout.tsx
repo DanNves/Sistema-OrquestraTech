@@ -57,7 +57,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="flex min-h-screen overflow-hidden relative bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300">
+    <div className="flex min-h-screen overflow-hidden relative bg-[#0f172a] transition-colors duration-300">
       {/* Mobile overlay */}
       <div
         className={`overlay ${isMobileMenuOpen ? 'overlay-visible' : ''}`}
