@@ -1,6 +1,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Users, 
+  CalendarDays, 
+  UserPlus, 
+  Settings,
+  Music
+} from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -18,57 +26,65 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentPage,
 }) => {
   const navItems = [
-    { name: 'Dashboard', icon: 'fa-tachometer-alt', path: '/', notificationCount: 0 },
-    { name: 'Equipes', icon: 'fa-users', path: '/equipes', notificationCount: 0 },
-    { name: 'Eventos', icon: 'fa-calendar-alt', path: '/eventos', notificationCount: 0 },
-    { name: 'Usuários', icon: 'fa-user-plus', path: '/usuarios', notificationCount: 3 },
-    { name: 'Configurações', icon: 'fa-cog', path: '/configuracoes', notificationCount: 0 },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/', notificationCount: 0 },
+    { name: 'Equipes', icon: Users, path: '/equipes', notificationCount: 0 },
+    { name: 'Eventos', icon: CalendarDays, path: '/eventos', notificationCount: 0 },
+    { name: 'Usuários', icon: UserPlus, path: '/usuarios', notificationCount: 3 },
+    { name: 'Configurações', icon: Settings, path: '/configuracoes', notificationCount: 0 },
   ];
 
   return (
     <div
-      className={`bg-white shadow-lg w-64 fixed h-full transition-all duration-300 z-50 ${
+      className={`bg-sidebar shadow-soft w-64 fixed h-full transition-all duration-300 z-50 ${
         isCollapsed ? 'sidebar-collapsed' : ''
       } ${isMobileOpen ? 'sidebar-mobile-open' : 'sidebar-mobile'}`}
     >
-      <div className="p-4 flex items-center justify-between border-b border-gray-100">
+      <div className="p-5 flex items-center justify-between border-b border-gray-100/50">
         <div className="flex items-center">
-          <div className="bg-primary-600 p-2 rounded-lg">
-            <i className="fas fa-music text-white text-xl logo-icon"></i>
+          <div className="bg-primary-500 p-2 rounded-lg">
+            <Music className="text-white h-5 w-5 logo-icon" />
           </div>
-          <span className="logo-text text-xl font-bold ml-3 text-gray-800">MusicTech</span>
+          <span className="logo-text text-lg font-semibold ml-3 text-gray-800 dark:text-gray-100">MusicTech</span>
         </div>
         <button
           onClick={toggleSidebar}
-          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
           aria-label="Toggle sidebar"
         >
-          <i className="fas fa-bars"></i>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
         </button>
       </div>
 
-      <div className="user-info p-4 border-b border-gray-100 flex items-center">
+      <div className="user-info p-5 border-b border-gray-100/50 flex items-center">
         <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-          <i className="fas fa-user text-primary-600"></i>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
         </div>
         <div className="ml-3">
-          <p className="font-medium text-gray-800">Admin</p>
-          <p className="user-role text-xs text-gray-500">Administrador</p>
+          <p className="font-medium text-gray-800 dark:text-gray-100">Admin</p>
+          <p className="user-role text-xs text-gray-500 dark:text-gray-400">Administrador</p>
         </div>
       </div>
 
-      <div className="p-4">
-        <ul className="space-y-1">
+      <div className="p-5">
+        <div className="text-xs uppercase font-medium text-gray-500 dark:text-gray-400 mb-3">Menu</div>
+        <ul className="space-y-2">
           {navItems.map((item) => (
             <li key={item.name}>
               <Link
                 to={item.path}
-                className={`nav-item flex items-center p-3 text-gray-600 rounded-lg hover:bg-primary-50 transition-colors ${
+                className={`nav-item flex items-center p-3 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-gray-800 transition-colors ${
                   currentPage === item.name ? 'active-nav' : ''
                 }`}
                 onClick={() => onPageChange(item.name)}
               >
-                <i className={`fas ${item.icon} text-gray-500 w-5 text-center`}></i>
+                <item.icon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 <span className="nav-text ml-3 font-medium">{item.name}</span>
                 {item.notificationCount > 0 && (
                   <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto">

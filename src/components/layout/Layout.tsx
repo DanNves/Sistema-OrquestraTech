@@ -41,6 +41,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       }
     };
 
+    // Get current route and set page name
+    const path = window.location.pathname;
+    if (path === '/') setCurrentPage('Dashboard');
+    else if (path === '/equipes') setCurrentPage('Equipes');
+    else if (path === '/eventos') setCurrentPage('Eventos');
+    else if (path === '/usuarios') setCurrentPage('Usuários');
+    else if (path === '/configuracoes') setCurrentPage('Configurações');
+
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -49,7 +57,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="flex min-h-screen overflow-hidden relative bg-[#f9fafb]">
+    <div className="flex min-h-screen overflow-hidden relative bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300">
       {/* Mobile overlay */}
       <div
         className={`overlay ${isMobileMenuOpen ? 'overlay-visible' : ''}`}

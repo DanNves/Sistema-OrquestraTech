@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Poppins', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -26,30 +29,30 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					50: '#f0f9ff',
-					100: '#e0f2fe',
-					200: '#bae6fd',
-					300: '#7dd3fc',
-					400: '#38bdf8',
-					500: '#0ea5e9',
-					600: '#0284c7',
-					700: '#0369a1',
-					800: '#075985',
-					900: '#0c4a6e',
+					50: '#f0f7ff',
+					100: '#e0effe',
+					200: '#b9ddfe',
+					300: '#7cc2fd',
+					400: '#36a4f9',
+					500: '#0d89eb',
+					600: '#006dcb',
+					700: '#0057a5',
+					800: '#064b87',
+					900: '#0b3f70',
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
-					50: '#f5f3ff',
-					100: '#ede9fe',
-					200: '#ddd6fe',
-					300: '#c4b5fd',
-					400: '#a78bfa',
-					500: '#8b5cf6',
-					600: '#7c3aed',
-					700: '#6d28d9',
-					800: '#5b21b6',
-					900: '#4c1d95',
+					50: '#f5f7fa',
+					100: '#ebeef3',
+					200: '#dce1e9',
+					300: '#c4ccd8',
+					400: '#a5b0c2',
+					500: '#8d9bb0',
+					600: '#7285a0',
+					700: '#637592',
+					800: '#4e5d75',
+					900: '#394455',
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
@@ -92,8 +95,9 @@ export default {
 				'2xl': '1.5rem',
 			},
 			boxShadow: {
-				'soft': '0 2px 15px rgba(0, 0, 0, 0.05)',
-				'elevated': '0 10px 30px rgba(0, 0, 0, 0.08)',
+				'soft': '0 2px 12px rgba(0, 0, 0, 0.04)',
+				'elevated': '0 8px 24px rgba(0, 0, 0, 0.06)',
+				'card': '0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -131,13 +135,6 @@ export default {
 				'fade-in': 'fade-in 0.3s ease-in-out',
 				'slide-down': 'slide-down 0.3s ease-out',
 				'slide-up': 'slide-up 0.3s ease-out',
-			},
-			fontFamily: {
-				sans: ['Inter', 'sans-serif']
-			},
-			backgroundImage: {
-				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
 			},
 		}
 	},
