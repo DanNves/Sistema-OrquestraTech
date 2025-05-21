@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="flex min-h-screen overflow-hidden relative bg-[#f9fafb]">
+    <div className="flex min-h-screen overflow-hidden relative bg-background transition-colors duration-300">
       {/* Mobile overlay */}
       <div
         className={`overlay ${isMobileMenuOpen ? 'overlay-visible' : ''}`}
@@ -81,7 +81,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
 
         {/* Page content */}
-        <div className="p-4 md:p-6 lg:p-8">
+        <div className="p-4 md:p-6 lg:p-8 animate-fade-in">
           {children}
         </div>
       </div>
