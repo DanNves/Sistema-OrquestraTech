@@ -35,7 +35,7 @@ interface SettingCardProps {
 
 const SettingCard: React.FC<SettingCardProps> = ({ title, description, icon, onClick }) => {
   return (
-    <Card className="hover:border-primary/50 transition-all cursor-pointer card-hover" onClick={onClick}>
+    <Card className="hover:border-primary/50 transition-all cursor-pointer bg-[#131b2e] border border-[#1f2b45] text-white" onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -43,7 +43,7 @@ const SettingCard: React.FC<SettingCardProps> = ({ title, description, icon, onC
         </div>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-sm text-gray-600">{description}</CardDescription>
+        <CardDescription className="text-sm text-gray-300">{description}</CardDescription>
       </CardContent>
     </Card>
   );
@@ -158,8 +158,8 @@ const Configuracoes = () => {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Configurações do Sistema</h2>
+        <div className="bg-[#131b2e] shadow rounded-lg p-6 border border-[#1f2b45]">
+          <h2 className="text-2xl font-bold text-white mb-6">Configurações do Sistema</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {settingsCards.map((card) => (
@@ -177,10 +177,10 @@ const Configuracoes = () => {
 
       {/* Dialog de Configurações Gerais */}
       <Dialog open={activeDialog === "general"} onOpenChange={() => activeDialog === "general" && closeDialog()}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-[#131b2e] border border-[#1f2b45] text-white">
           <DialogHeader>
             <DialogTitle>Configurações Gerais</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-gray-300">
               Ajuste as configurações básicas do sistema.
             </DialogDescription>
           </DialogHeader>
@@ -192,6 +192,7 @@ const Configuracoes = () => {
                 name="siteTitle"
                 value={generalSettings.siteTitle}
                 onChange={handleInputChange}
+                className="bg-[#1a223f] border-[#1f2b45]"
               />
             </div>
             <div className="space-y-2">
@@ -202,12 +203,13 @@ const Configuracoes = () => {
                 value={generalSettings.siteDescription}
                 onChange={handleInputChange}
                 rows={3}
+                className="bg-[#1a223f] border-[#1f2b45]"
               />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <label htmlFor="enableNotifications" className="text-sm font-medium">Ativar Notificações</label>
-                <p className="text-xs text-gray-500">Receba alertas sobre eventos e atualizações</p>
+                <p className="text-xs text-gray-400">Receba alertas sobre eventos e atualizações</p>
               </div>
               <Switch
                 id="enableNotifications"
@@ -218,7 +220,7 @@ const Configuracoes = () => {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <label htmlFor="darkMode" className="text-sm font-medium">Modo Escuro</label>
-                <p className="text-xs text-gray-500">Alterna entre modo claro e escuro</p>
+                <p className="text-xs text-gray-400">Alterna entre modo claro e escuro</p>
               </div>
               <Switch
                 id="darkMode"
@@ -228,7 +230,7 @@ const Configuracoes = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
+            <Button variant="outline" onClick={closeDialog} className="border-[#1f2b45] text-white hover:bg-[#1a223f]">Cancelar</Button>
             <Button onClick={saveGeneralSettings}>Salvar Alterações</Button>
           </DialogFooter>
         </DialogContent>
@@ -236,15 +238,15 @@ const Configuracoes = () => {
 
       {/* Dialog de Notificações - Placeholder */}
       <Dialog open={activeDialog === "notifications"} onOpenChange={() => activeDialog === "notifications" && closeDialog()}>
-        <DialogContent>
+        <DialogContent className="bg-[#131b2e] border border-[#1f2b45] text-white">
           <DialogHeader>
             <DialogTitle>Configurações de Notificações</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-gray-300">
               Gerencie suas preferências de notificações.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-300">
               Esta funcionalidade será implementada em breve. Fique atento às atualizações!
             </p>
           </div>
@@ -261,15 +263,15 @@ const Configuracoes = () => {
           open={activeDialog === card.dialog} 
           onOpenChange={() => activeDialog === card.dialog && closeDialog()}
         >
-          <DialogContent>
+          <DialogContent className="bg-[#131b2e] border border-[#1f2b45] text-white">
             <DialogHeader>
               <DialogTitle>{card.title}</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-gray-300">
                 {card.description}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-300">
                 Esta funcionalidade será implementada em breve. Fique atento às atualizações!
               </p>
             </div>
