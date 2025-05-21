@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -47,9 +48,9 @@ const EventCalendar = () => {
 
   // Function to add custom styling to dates with events
   const modifiersStyles = {
-    confirmado: { backgroundColor: '#F2FCE2', borderColor: '#4ade80', color: '#166534' },
-    pendente: { backgroundColor: '#FEF7CD', borderColor: '#fde68a', color: '#854d0e' },
-    cancelado: { backgroundColor: '#FEE2E2', borderColor: '#f87171', color: '#991b1b' },
+    confirmado: { backgroundColor: '#1a3d1a', borderColor: '#4ade80', color: '#fff' },
+    pendente: { backgroundColor: '#3f3415', borderColor: '#fde68a', color: '#fff' },
+    cancelado: { backgroundColor: '#3d1a1a', borderColor: '#f87171', color: '#fff' },
   };
 
   // Create modifiers for the calendar to apply styles to specific dates
@@ -90,8 +91,8 @@ const EventCalendar = () => {
   return (
     <Card className="transition-all duration-300 card-hover h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-lg font-semibold text-gray-800">Calendário de Eventos</CardTitle>
-        <CalendarCheck className="h-5 w-5 text-primary-600" />
+        <CardTitle className="text-lg font-semibold text-white">Calendário de Eventos</CardTitle>
+        <CalendarCheck className="h-5 w-5 text-blue-400" />
       </CardHeader>
       <CardContent className="pt-2">
         <div className="flex flex-row gap-6">
@@ -104,7 +105,7 @@ const EventCalendar = () => {
                     mode="single"
                     selected={date}
                     onSelect={handleDateSelect}
-                    className="p-0 w-full max-w-none"
+                    className="p-0 w-full max-w-none text-gray-200"
                     showOutsideDays={true}
                     modifiers={modifiers}
                     modifiersStyles={modifiersStyles}
@@ -112,21 +113,21 @@ const EventCalendar = () => {
                 </div>
               </PopoverTrigger>
               {selectedDate && (
-                <PopoverContent className="w-auto p-3 bg-white shadow-lg rounded-md" sideOffset={5}>
+                <PopoverContent className="w-auto p-3 bg-[#131b2e] border border-[#1f2b45] shadow-lg rounded-md" sideOffset={5}>
                   <div className="space-y-2">
-                    <h4 className="font-medium text-sm mb-2">Eventos em {selectedDate.getDate()}/{selectedDate.getMonth() + 1}</h4>
+                    <h4 className="font-medium text-sm mb-2 text-white">Eventos em {selectedDate.getDate()}/{selectedDate.getMonth() + 1}</h4>
                     {getEventsForDate(selectedDate).map((event, idx) => (
                       <div key={idx} className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-medium">{event.name}</span>
+                        <span className="text-sm font-medium text-gray-200">{event.name}</span>
                         <Badge 
                           variant={
                             event.status === 'Confirmado' ? 'default' : 
                             event.status === 'Pendente' ? 'outline' : 'destructive'
                           }
                           className={
-                            event.status === 'Confirmado' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 
-                            event.status === 'Pendente' ? 'bg-yellow-100 text-yellow-800 border-yellow-400 hover:bg-yellow-200' : 
-                            'bg-red-100 text-red-800 hover:bg-red-200'
+                            event.status === 'Confirmado' ? 'bg-green-900/50 text-green-400 border-green-400' : 
+                            event.status === 'Pendente' ? 'bg-yellow-900/50 text-yellow-400 border-yellow-400' : 
+                            'bg-red-900/50 text-red-400 border-red-400'
                           }
                         >
                           {event.status}
@@ -141,20 +142,20 @@ const EventCalendar = () => {
           
           {/* Legend for calendar events - Moved to the right */}
           <div className="flex flex-col justify-start mt-4 space-y-3 min-w-[120px]">
-            <h3 className="text-sm font-medium text-gray-700">Legenda</h3>
+            <h3 className="text-sm font-medium text-gray-200">Legenda</h3>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full bg-green-100 border-2 border-green-500 mr-2"></div>
-              <span className="text-sm">Confirmado</span>
+              <div className="w-4 h-4 rounded-full bg-green-900/50 border-2 border-green-500 mr-2"></div>
+              <span className="text-sm text-gray-300">Confirmado</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full bg-yellow-100 border-2 border-yellow-400 mr-2"></div>
-              <span className="text-sm">Pendente</span>
+              <div className="w-4 h-4 rounded-full bg-yellow-900/50 border-2 border-yellow-400 mr-2"></div>
+              <span className="text-sm text-gray-300">Pendente</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded-full bg-red-100 border-2 border-red-500 mr-2"></div>
-              <span className="text-sm">Cancelado</span>
+              <div className="w-4 h-4 rounded-full bg-red-900/50 border-2 border-red-500 mr-2"></div>
+              <span className="text-sm text-gray-300">Cancelado</span>
             </div>
-            <div className="mt-4 text-xs text-gray-500">
+            <div className="mt-4 text-xs text-gray-400">
               Clique em uma data para ver os eventos agendados.
             </div>
           </div>

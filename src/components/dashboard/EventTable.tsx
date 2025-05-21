@@ -65,7 +65,11 @@ const EventTable: React.FC<EventTableProps> = ({ events }) => {
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
                 <span
-                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${event.status.bgColor.replace('bg-green-100', 'bg-green-500/20').replace('bg-yellow-100', 'bg-yellow-500/20').replace('bg-blue-100', 'bg-blue-500/20')} ${event.status.textColor.replace('text-green-800', 'text-green-400').replace('text-yellow-800', 'text-yellow-400').replace('text-blue-800', 'text-blue-400')}`}
+                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    ${event.status.text === 'Confirmado' ? 'bg-green-500/20 text-green-400' : 
+                      event.status.text === 'Pendente' ? 'bg-yellow-500/20 text-yellow-400' : 
+                      event.status.text === 'Em preparação' ? 'bg-blue-500/20 text-blue-400' : 
+                      'bg-gray-500/20 text-gray-400'}`}
                 >
                   {event.status.text}
                 </span>
