@@ -54,7 +54,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   return (
     <button
       onClick={handleClick}
-      className={`w-full flex items-center justify-between p-3 ${bgColor.replace('bg-primary-50', 'bg-primary-500/10').replace('bg-green-50', 'bg-green-500/10').replace('bg-blue-50', 'bg-blue-500/10').replace('bg-purple-50', 'bg-purple-500/10')} ${textColor} rounded-lg hover:bg-opacity-80 transition-colors focus:outline-none focus:ring-2 ${ringColor} focus:ring-opacity-50`}
+      className={`w-full flex items-center justify-between p-3 ${bgColor} ${textColor} rounded-lg hover:bg-opacity-80 transition-colors focus:outline-none focus:ring-2 ${ringColor} focus:ring-opacity-50`}
     >
       <span className="font-medium">{text}</span>
       <Icon className="h-5 w-5" />

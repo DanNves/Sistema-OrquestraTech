@@ -163,28 +163,28 @@ const Equipes = () => {
           {/* Header with filters and actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-white">Gerenciamento de Equipes</h2>
-              <p className="text-gray-400 mt-1">Gerencie as equipes para diferentes eventos</p>
+              <h2 className="text-2xl font-bold text-gray-800">Gerenciamento de Equipes</h2>
+              <p className="text-gray-500 mt-1">Gerencie as equipes para diferentes eventos</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  className={filter === 'all' ? 'bg-primary-500/10 text-primary-400 border-[#1f2b45]' : 'border-[#1f2b45] text-gray-300'}
+                  className={filter === 'all' ? 'bg-primary-50 text-primary-600' : ''}
                   onClick={() => setFilter('all')}
                 >
                   Todas
                 </Button>
                 <Button 
                   variant="outline" 
-                  className={filter === 'active' ? 'bg-green-500/10 text-green-400 border-[#1f2b45]' : 'border-[#1f2b45] text-gray-300'}
+                  className={filter === 'active' ? 'bg-green-50 text-green-600' : ''}
                   onClick={() => setFilter('active')}
                 >
                   Ativas
                 </Button>
                 <Button 
                   variant="outline" 
-                  className={filter === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-[#1f2b45]' : 'border-[#1f2b45] text-gray-300'}
+                  className={filter === 'pending' ? 'bg-yellow-50 text-yellow-600' : ''}
                   onClick={() => setFilter('pending')}
                 >
                   Pendentes
@@ -197,67 +197,67 @@ const Equipes = () => {
           </div>
           
           {/* Teams Table */}
-          <div className="bg-[#131b2e] shadow rounded-lg overflow-hidden border border-[#1f2b45]">
+          <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-[#1a223f]">
-                  <TableRow className="border-b border-[#1f2b45]">
-                    <TableHead className="text-gray-300">Equipe</TableHead>
-                    <TableHead className="text-gray-300">Evento</TableHead>
-                    <TableHead className="text-gray-300">Responsável</TableHead>
-                    <TableHead className="text-gray-300">Membros</TableHead>
-                    <TableHead className="text-gray-300">Status</TableHead>
-                    <TableHead className="text-gray-300">Ações</TableHead>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Equipe</TableHead>
+                    <TableHead>Evento</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Membros</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTeams.length > 0 ? (
                     filteredTeams.map(team => (
-                      <TableRow key={team.id} className="hover:bg-[#1a223f] border-b border-[#1f2b45]">
-                        <TableCell className="font-medium text-white">{team.name}</TableCell>
-                        <TableCell className="text-gray-300">{team.event}</TableCell>
-                        <TableCell className="text-gray-300">{team.leader}</TableCell>
-                        <TableCell className="text-gray-300">
+                      <TableRow key={team.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{team.name}</TableCell>
+                        <TableCell>{team.event}</TableCell>
+                        <TableCell>{team.leader}</TableCell>
+                        <TableCell>
                           <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-1 text-gray-400" />
+                            <Users className="h-4 w-4 mr-1 text-gray-500" />
                             <span>{team.members}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           {team.status === 'active' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-400">
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                               Ativa
                             </span>
                           )}
                           {team.status === 'pending' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-500/20 text-yellow-400">
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
                               Pendente
                             </span>
                           )}
                           {team.status === 'inactive' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-500/20 text-gray-400">
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                               Inativa
                             </span>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-[#2a3352]" onClick={() => openEditModal(team)}>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditModal(team)}>
                               <span className="sr-only">Editar</span>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-[#2a3352]" onClick={() => deleteTeam(team.id)}>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" onClick={() => deleteTeam(team.id)}>
                               <span className="sr-only">Excluir</span>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                             {team.status !== 'active' && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-400 hover:text-green-300 hover:bg-[#2a3352]" onClick={() => toggleStatus(team.id, 'active')}>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-500" onClick={() => toggleStatus(team.id, 'active')}>
                                 <span className="sr-only">Ativar</span>
                                 <Check className="h-4 w-4" />
                               </Button>
                             )}
                             {team.status === 'active' && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-300 hover:bg-[#2a3352]" onClick={() => toggleStatus(team.id, 'inactive')}>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500" onClick={() => toggleStatus(team.id, 'inactive')}>
                                 <span className="sr-only">Desativar</span>
                                 <X className="h-4 w-4" />
                               </Button>
@@ -268,7 +268,7 @@ const Equipes = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-400">
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                         Nenhuma equipe encontrada com os filtros atuais.
                       </TableCell>
                     </TableRow>
@@ -282,11 +282,11 @@ const Equipes = () => {
 
       {/* Modal for creating/editing team */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md mx-auto bg-[#131b2e] border border-[#1f2b45] text-white">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md mx-auto">
             <CardHeader>
               <CardTitle>{editingTeam ? 'Editar Equipe' : 'Nova Equipe'}</CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardDescription>
                 {editingTeam 
                   ? 'Atualize os detalhes da equipe selecionada' 
                   : 'Preencha os detalhes para criar uma nova equipe'}
@@ -294,23 +294,22 @@ const Equipes = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-300">Nome da Equipe</Label>
+                <Label htmlFor="name">Nome da Equipe</Label>
                 <Input 
                   id="name" 
                   name="name" 
                   placeholder="Nome da equipe" 
                   value={formData.name} 
-                  onChange={handleInputChange}
-                  className="bg-[#1a223f] border-[#1f2b45]"
+                  onChange={handleInputChange} 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="event" className="text-gray-300">Evento</Label>
+                <Label htmlFor="event">Evento</Label>
                 <select 
                   id="event" 
                   name="event" 
-                  className="flex h-10 w-full rounded-md border border-[#1f2b45] bg-[#1a223f] px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-white"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                   value={formData.event} 
                   onChange={handleInputChange}
                 >
@@ -322,19 +321,18 @@ const Equipes = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="leader" className="text-gray-300">Responsável</Label>
+                <Label htmlFor="leader">Responsável</Label>
                 <Input 
                   id="leader" 
                   name="leader" 
                   placeholder="Nome do responsável" 
                   value={formData.leader} 
-                  onChange={handleInputChange}
-                  className="bg-[#1a223f] border-[#1f2b45]"
+                  onChange={handleInputChange} 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="members" className="text-gray-300">Número de Membros</Label>
+                <Label htmlFor="members">Número de Membros</Label>
                 <Input 
                   id="members" 
                   name="members" 
@@ -342,17 +340,16 @@ const Equipes = () => {
                   min="0" 
                   placeholder="0" 
                   value={formData.members} 
-                  onChange={handleInputChange}
-                  className="bg-[#1a223f] border-[#1f2b45]"
+                  onChange={handleInputChange} 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-gray-300">Status</Label>
+                <Label htmlFor="status">Status</Label>
                 <select 
                   id="status" 
                   name="status" 
-                  className="flex h-10 w-full rounded-md border border-[#1f2b45] bg-[#1a223f] px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-white"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                   value={formData.status} 
                   onChange={handleInputChange}
                 >
@@ -363,7 +360,7 @@ const Equipes = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={closeModal} className="border-[#1f2b45] text-white hover:bg-[#1a223f]">Cancelar</Button>
+              <Button variant="outline" onClick={closeModal}>Cancelar</Button>
               <Button onClick={saveTeam}>Salvar</Button>
             </CardFooter>
           </Card>

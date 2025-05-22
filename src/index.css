@@ -7,48 +7,7 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 217 100% 50%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 214 32% 25%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 95% 45%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 212.7 26.8% 83.9%;
-
-    --radius: 0.5rem;
-  }
-
-  .light {
-    --background: 0 0% 100%;
+    --background: 210 40% 99%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -57,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 100% 50%;
+    --primary: 210 95% 45%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 215 19% 35%;
@@ -76,6 +35,8 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 210 95% 45%;
 
+    --radius: 0.5rem;
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 210 95% 45%;
@@ -85,6 +46,45 @@
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 210 95% 45%;
   }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 95% 45%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 215 19% 35%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    
+    --sidebar-background: 222 47% 12%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 95% 45%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
+  }
 }
 
 @layer base {
@@ -93,7 +93,7 @@
   }
 
   body {
-    @apply bg-[#0f172a] text-foreground font-sans antialiased;
+    @apply bg-[#f8fafc] text-foreground font-sans antialiased;
   }
 }
 
@@ -126,7 +126,7 @@
   
   /* Navigation styles */
   .active-nav {
-    @apply bg-primary text-white !important;
+    @apply bg-primary-500 text-white !important;
   }
   
   .active-nav svg {
@@ -134,17 +134,17 @@
   }
   
   .nav-item {
-    @apply rounded-lg transition-all duration-300 hover:bg-[#1a223f];
+    @apply rounded-lg transition-all duration-300 hover:bg-primary-50;
   }
   
   /* Card styles */
   .card-hover {
-    @apply transition-all duration-300 hover:translate-y-[-2px] hover:shadow-elevated bg-[#131b2e] border border-[#1f2b45] rounded-lg overflow-hidden;
+    @apply transition-all duration-300 hover:translate-y-[-2px] hover:shadow-elevated bg-white border border-gray-100/50 rounded-lg overflow-hidden;
   }
   
   /* Table styles */
   .table-row-hover {
-    @apply hover:bg-[#1a223f];
+    @apply hover:bg-primary-50;
   }
   
   /* Button styles */
@@ -153,7 +153,7 @@
   }
   
   .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-600 focus:ring-primary;
+    @apply bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
   }
   
   .btn-secondary {
@@ -171,7 +171,7 @@
   
   /* Dashboard specific styles */
   .stat-card {
-    @apply bg-[#131b2e] rounded-lg shadow-card p-4 md:p-6 border border-[#1f2b45] transition-all duration-300 hover:shadow-soft;
+    @apply bg-white rounded-lg shadow-card p-4 md:p-6 border border-gray-100/50 transition-all duration-300 hover:shadow-soft;
   }
   
   .stat-card-icon {
@@ -181,32 +181,6 @@
   /* Action button styles */
   .action-btn {
     @apply bg-opacity-10 hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center gap-3 p-3 w-full;
-  }
-
-  /* Status badge styles */
-  .status-badge {
-    @apply text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1.5;
-  }
-  
-  .status-active {
-    @apply bg-[#25b860]/10 text-[#25b860];
-  }
-  
-  .status-inactive {
-    @apply bg-[#f26464]/10 text-[#f26464];
-  }
-  
-  .status-pending {
-    @apply bg-[#ffc107]/10 text-[#ffc107];
-  }
-
-  /* Dropdown menu styles */
-  .dropdown-menu {
-    @apply bg-[#131b2e] border border-[#1f2b45] rounded-lg shadow-elevated p-1 z-50;
-  }
-
-  .dropdown-item {
-    @apply px-3 py-2 text-sm rounded-md hover:bg-[#1a223f] transition-colors cursor-pointer;
   }
 }
 
@@ -234,11 +208,11 @@
 
 /* Frox-specific design additions */
 .gradient-heading {
-  @apply bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent;
 }
 
 .section-heading {
-  @apply text-xl font-semibold mb-4 text-white;
+  @apply text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100;
 }
 
 /* Custom scrollbar */
@@ -248,16 +222,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a223f;
+  background: theme('colors.gray.100');
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a3352;
+  background: theme('colors.gray.300');
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4366;
+  background: theme('colors.gray.400');
 }
 
 /* Animation utilities */

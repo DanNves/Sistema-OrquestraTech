@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import StatCard from '../components/dashboard/StatCard';
@@ -184,10 +183,10 @@ const Index = () => {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-[#131b2e] rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover border border-[#1f2b45]">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-white">Atividade Recente</h2>
-            <a href="#" className="text-sm text-primary-500 hover:text-primary-400">
+            <h2 className="text-lg font-semibold text-gray-800">Atividade Recente</h2>
+            <a href="#" className="text-sm text-primary-600 hover:text-primary-800">
               Ver tudo
             </a>
           </div>
@@ -202,10 +201,10 @@ const Index = () => {
       {/* Upcoming Events and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Upcoming Events */}
-        <div className="bg-[#131b2e] rounded-lg shadow p-4 md:p-6 lg:col-span-2 transition-all duration-300 card-hover border border-[#1f2b45]">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 lg:col-span-2 transition-all duration-300 card-hover">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-white">Próximos Eventos</h2>
-            <a href="#" className="text-sm text-primary-500 hover:text-primary-400">
+            <h2 className="text-lg font-semibold text-gray-800">Próximos Eventos</h2>
+            <a href="#" className="text-sm text-primary-600 hover:text-primary-800">
               Ver todos
             </a>
           </div>
@@ -213,8 +212,8 @@ const Index = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-[#131b2e] rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover border border-[#1f2b45]">
-          <h2 className="text-lg font-semibold text-white mb-4">Ações Rápidas</h2>
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Ações Rápidas</h2>
           <div className="space-y-3">
             {quickActions.map((action, index) => (
               <ActionButton key={index} {...action} />
