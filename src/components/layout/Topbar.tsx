@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Sun, Moon, ChevronDown, Search, User } from 'lucide-react';
+import { Bell, User, Moon, Sun, Search } from 'lucide-react';
 
 interface TopbarProps {
   pageName: string;
@@ -38,15 +38,16 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
   }, []);
 
   useEffect(() => {
-    // Check if user has dark mode preference
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
-                  window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(isDark);
+    // Check for user preference in localStorage or system preference
+    const userPrefersDark = localStorage.getItem('darkMode') === 'true' || 
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
-    if (isDark) {
+    if (userPrefersDark) {
       document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
     } else {
       document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
     }
   }, []);
 
@@ -63,103 +64,93 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
   };
 
   const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode.toString());
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
+    if (isDarkMode) {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
+      setIsDarkMode(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
+      setIsDarkMode(true);
     }
   };
 
   return (
-    <div className="bg-card shadow-soft p-4 flex justify-between items-center sticky top-0 z-10">
-      <div className="flex items-center gap-4">
+    <div className="bg-background border-b border-border shadow-sm p-4 flex justify-between items-center sticky top-0 z-10 transition-colors duration-300">
+      <div className="flex items-center">
         <button
           onClick={toggleMobileMenu}
-          className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+          className="md:hidden text-foreground hover:text-primary/80 mr-4 focus:outline-none transition-colors"
           aria-label="Open menu"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <h1 className="text-xl font-medium text-gray-800 dark:text-gray-100">{pageName}</h1>
+        <h1 className="text-xl font-bold text-foreground">{pageName}</h1>
       </div>
       
-      <div className="hidden md:flex relative mx-auto max-w-md w-full px-4">
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Search className="w-5 h-5 text-gray-400" />
-          </div>
-          <input
+      <div className="relative flex-1 max-w-md mx-4 hidden md:block">
+        <div className="relative">
+          <input 
             type="text"
-            className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2.5"
-            placeholder="Search..."
+            placeholder="Buscar..." 
+            className="w-full bg-background border border-input rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
           />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
         </div>
       </div>
       
       <div className="flex items-center space-x-3">
-        <button 
+        <button
           onClick={toggleDarkMode}
-          className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
-          aria-label="Toggle dark mode"
+          className="p-2 rounded-full text-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none transition-colors"
+          aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
         >
-          {isDarkMode ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
         
         <div className="relative" ref={notificationsRef}>
           <button
             onClick={toggleNotifications}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 relative focus:outline-none"
-            aria-label="Notifications"
+            className="p-2 rounded-full text-foreground hover:bg-accent hover:text-accent-foreground relative focus:outline-none transition-colors"
+            aria-label="Notificações"
           >
-            <Bell className="h-5 w-5" />
+            <Bell size={20} />
             <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
               3
             </span>
           </button>
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-card rounded-lg shadow-elevated py-1 z-20 animate-slide-down border border-gray-100/50 dark:border-gray-700/50">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50">
-                <p className="font-medium text-gray-800 dark:text-gray-100">Notificações</p>
+            <div className="absolute right-0 mt-2 w-80 bg-popover rounded-lg shadow-lg py-2 z-20 animate-in fade-in slide-in duration-200 border border-border">
+              <div className="px-4 py-2 border-b border-border">
+                <p className="font-medium text-popover-foreground">Notificações</p>
               </div>
-              <div className="max-h-96 overflow-y-auto">
+              <a
+                href="#"
+                className="block px-4 py-3 text-sm hover:bg-accent transition-colors border-l-2 border-transparent hover:border-primary"
+              >
+                <p className="font-medium text-foreground">Novo usuário solicitou acesso</p>
+                <p className="text-xs text-muted-foreground mt-1">Há 5 minutos</p>
+              </a>
+              <a
+                href="#"
+                className="block px-4 py-3 text-sm hover:bg-accent transition-colors border-l-2 border-transparent hover:border-primary"
+              >
+                <p className="font-medium text-foreground">Evento "Mixagem Avançada" amanhã</p>
+                <p className="text-xs text-muted-foreground mt-1">Às 14:00</p>
+              </a>
+              <a
+                href="#"
+                className="block px-4 py-3 text-sm hover:bg-accent transition-colors border-l-2 border-transparent hover:border-primary"
+              >
+                <p className="font-medium text-foreground">2 novos membros na equipe</p>
+                <p className="text-xs text-muted-foreground mt-1">Há 2 horas</p>
+              </a>
+              <div className="border-t border-border px-4 py-2 text-center">
                 <a
                   href="#"
-                  className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100/50 dark:border-gray-700/50"
-                >
-                  <p className="font-medium">Novo usuário solicitou acesso</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">5 minutos atrás</p>
-                </a>
-                <a
-                  href="#"
-                  className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100/50 dark:border-gray-700/50"
-                >
-                  <p className="font-medium">Evento "Mixagem Avançada" amanhã</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">2 horas atrás</p>
-                </a>
-                <a
-                  href="#"
-                  className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <p className="font-medium">2 novos membros na equipe</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ontem às 16:45</p>
-                </a>
-              </div>
-              <div className="border-t border-gray-100 dark:border-gray-700/50 px-4 py-3">
-                <a
-                  href="#"
-                  className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-medium"
+                  className="text-sm text-primary hover:underline transition-colors"
                 >
                   Ver todas
                 </a>
@@ -171,52 +162,38 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
         <div className="relative" ref={profileRef}>
           <button
             onClick={toggleProfile}
-            className="flex items-center gap-2 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
+            className="flex items-center space-x-2 p-2 rounded-full hover:bg-accent focus:outline-none transition-colors"
             aria-label="User profile"
           >
-            <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <User size={18} className="text-primary" />
             </div>
-            <span className="hidden md:inline font-medium">Admin</span>
-            <ChevronDown className="hidden md:inline h-4 w-4" />
+            <span className="hidden md:inline text-foreground font-medium text-sm">Admin</span>
           </button>
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-card rounded-lg shadow-elevated py-1 z-20 animate-slide-down border border-gray-100/50 dark:border-gray-700/50">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50">
-                <p className="font-medium text-gray-800 dark:text-gray-100">Admin</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">admin@musictech.com</p>
+            <div className="absolute right-0 mt-2 w-56 bg-popover rounded-lg shadow-lg py-2 z-20 animate-in fade-in slide-in duration-200 border border-border">
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-medium text-foreground">Admin</p>
+                <p className="text-xs text-muted-foreground mt-1">admin@musictech.com</p>
               </div>
               <a
                 href="#"
-                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
               >
-                <div className="flex items-center">
-                  <User className="h-4 w-4 mr-2" />
-                  Perfil
-                </div>
+                Perfil
               </a>
               <a
                 href="#"
-                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
               >
-                <div className="flex items-center">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configurações
-                </div>
+                Configurações
               </a>
-              <div className="border-t border-gray-100 dark:border-gray-700/50">
+              <div className="border-t border-border">
                 <a
                   href="#"
-                  className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
                 >
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                      <polyline points="16 17 21 12 16 7"></polyline>
-                      <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    Sair
-                  </div>
+                  Sair
                 </a>
               </div>
             </div>

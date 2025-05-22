@@ -1,14 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  CalendarDays, 
-  UserPlus, 
-  Settings,
-  Music
-} from 'lucide-react';
+import { User, Users, Calendar, Cog, Music, ChevronRight } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -26,68 +19,65 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentPage,
 }) => {
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/', notificationCount: 0 },
-    { name: 'Equipes', icon: Users, path: '/equipes', notificationCount: 0 },
-    { name: 'Eventos', icon: CalendarDays, path: '/eventos', notificationCount: 0 },
-    { name: 'Usuários', icon: UserPlus, path: '/usuarios', notificationCount: 3 },
-    { name: 'Configurações', icon: Settings, path: '/configuracoes', notificationCount: 0 },
+    { name: 'Dashboard', icon: <Music size={20} />, path: '/', notificationCount: 0 },
+    { name: 'Equipes', icon: <Users size={20} />, path: '/equipes', notificationCount: 0 },
+    { name: 'Eventos', icon: <Calendar size={20} />, path: '/eventos', notificationCount: 0 },
+    { name: 'Usuários', icon: <User size={20} />, path: '/usuarios', notificationCount: 3 },
+    { name: 'Configurações', icon: <Cog size={20} />, path: '/configuracoes', notificationCount: 0 },
   ];
 
   return (
     <div
-      className={`bg-sidebar shadow-soft w-64 fixed h-full transition-all duration-300 z-50 ${
+      className={`bg-sidebar text-sidebar-foreground shadow-lg w-64 fixed h-full transition-all duration-300 z-50 ${
         isCollapsed ? 'sidebar-collapsed' : ''
       } ${isMobileOpen ? 'sidebar-mobile-open' : 'sidebar-mobile'}`}
     >
-      <div className="p-5 flex items-center justify-between border-b border-gray-100/50">
+      <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
         <div className="flex items-center">
-          <div className="bg-primary-500 p-2 rounded-lg">
-            <Music className="text-white h-5 w-5 logo-icon" />
+          <div className="bg-gradient-to-r from-primary-600 to-primary-500 p-2 rounded-lg">
+            <Music className="text-white text-xl" />
           </div>
-          <span className="logo-text text-lg font-semibold ml-3 text-gray-800 dark:text-gray-100">MusicTech</span>
+          <span className="logo-text text-xl font-bold ml-3 text-sidebar-foreground">MusicTech</span>
         </div>
         <button
           onClick={toggleSidebar}
-          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none"
+          className="text-sidebar-foreground hover:text-sidebar-accent-foreground focus:outline-none transition-colors"
           aria-label="Toggle sidebar"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
+          <ChevronRight 
+            size={20} 
+            className={`transform transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}
+          />
         </button>
       </div>
 
-      <div className="user-info p-5 border-b border-gray-100/50 flex items-center">
-        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
+      <div className="user-info p-4 border-b border-sidebar-border flex items-center">
+        <div className="h-10 w-10 rounded-full bg-sidebar-accent flex items-center justify-center">
+          <User size={20} className="text-sidebar-primary" />
         </div>
         <div className="ml-3">
-          <p className="font-medium text-gray-800 dark:text-gray-100">Admin</p>
-          <p className="user-role text-xs text-gray-500 dark:text-gray-400">Administrador</p>
+          <p className="font-medium text-sidebar-foreground">Admin</p>
+          <p className="user-role text-xs text-sidebar-foreground/70">Administrador</p>
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="text-xs uppercase font-medium text-gray-500 dark:text-gray-400 mb-3">Menu</div>
-        <ul className="space-y-2">
+      <div className="p-4">
+        <ul className="space-y-1">
           {navItems.map((item) => (
-            <li key={item.name}>
+            <li key={item.name} className="overflow-hidden">
               <Link
                 to={item.path}
-                className={`nav-item flex items-center p-3 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-primary-50 dark:hover:bg-gray-800 transition-colors ${
+                className={`nav-item flex items-center p-3 text-sidebar-foreground rounded-lg hover:bg-sidebar-accent transition-all duration-200 ${
                   currentPage === item.name ? 'active-nav' : ''
                 }`}
                 onClick={() => onPageChange(item.name)}
               >
-                <item.icon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <span className="text-sidebar-foreground/70 w-5 text-center group-hover:text-sidebar-accent-foreground">
+                  {item.icon}
+                </span>
                 <span className="nav-text ml-3 font-medium">{item.name}</span>
                 {item.notificationCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto">
+                  <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto animate-pulse">
                     {item.notificationCount}
                   </span>
                 )}

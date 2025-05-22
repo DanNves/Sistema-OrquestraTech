@@ -1,25 +1,23 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 40% 99%;
-    --foreground: 222 47% 11%;
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 210 95% 45%;
+    --primary: 199 89% 48%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 215 19% 35%;
+    --secondary: 250 84% 54%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 210 40% 96.1%;
@@ -33,34 +31,34 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 95% 45%;
+    --ring: 199 89% 48%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 210 95% 45%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 210 95% 45%;
+    --sidebar-ring: 199 89% 48%;
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 12%;
+    --card: 222.2 47.4% 11.2%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 12%;
+    --popover: 222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 95% 45%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 215 19% 35%;
+    --secondary: 250 84% 54%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -76,9 +74,9 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
     
-    --sidebar-background: 222 47% 12%;
+    --sidebar-background: 222.2 47.4% 11.2%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 95% 45%;
+    --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
@@ -93,13 +91,11 @@
   }
 
   body {
-    @apply bg-[#f8fafc] text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
 @layer components {
-  /* Frox Dashboard UI Kit Styles */
-  
   /* Sidebar styles */
   .sidebar-collapsed {
     @apply w-20 !important;
@@ -126,7 +122,7 @@
   
   /* Navigation styles */
   .active-nav {
-    @apply bg-primary-500 text-white !important;
+    @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white !important;
   }
   
   .active-nav svg {
@@ -134,17 +130,21 @@
   }
   
   .nav-item {
-    @apply rounded-lg transition-all duration-300 hover:bg-primary-50;
+    @apply rounded-xl transition-all duration-300 hover:bg-primary-50 hover:scale-[1.02];
   }
   
   /* Card styles */
   .card-hover {
-    @apply transition-all duration-300 hover:translate-y-[-2px] hover:shadow-elevated bg-white border border-gray-100/50 rounded-lg overflow-hidden;
+    @apply transition-all duration-300 hover:translate-y-[-2px] hover:shadow-lg bg-card border border-border rounded-xl overflow-hidden;
   }
   
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-soft;
+  }
+
   /* Table styles */
   .table-row-hover {
-    @apply hover:bg-primary-50;
+    @apply hover:bg-accent/50 transition-colors duration-200;
   }
   
   /* Button styles */
@@ -153,34 +153,34 @@
   }
   
   .btn-primary {
-    @apply bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
+    @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white hover:brightness-105 focus:ring-primary-500 shadow-sm hover:shadow transition-all;
   }
   
   .btn-secondary {
-    @apply bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500;
+    @apply bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500 shadow-sm hover:shadow transition-all;
   }
   
   .btn-outline {
-    @apply border border-input bg-transparent hover:bg-accent hover:text-accent-foreground;
+    @apply border border-input bg-transparent hover:bg-accent hover:text-accent-foreground transition-all;
   }
   
   /* Input styles */
   .input {
-    @apply flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all;
   }
   
   /* Dashboard specific styles */
   .stat-card {
-    @apply bg-white rounded-lg shadow-card p-4 md:p-6 border border-gray-100/50 transition-all duration-300 hover:shadow-soft;
+    @apply bg-card rounded-xl shadow-sm p-4 md:p-6 border border-border transition-all duration-300 hover:shadow-md hover:border-primary/20;
   }
   
   .stat-card-icon {
-    @apply p-3 rounded-lg flex items-center justify-center;
+    @apply p-3 rounded-xl flex items-center justify-center;
   }
   
   /* Action button styles */
   .action-btn {
-    @apply bg-opacity-10 hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center gap-3 p-3 w-full;
+    @apply bg-opacity-10 hover:bg-opacity-20 transition-all duration-300 rounded-xl flex items-center gap-3 p-3 w-full hover:scale-[1.02];
   }
 }
 
@@ -206,32 +206,27 @@
   }
 }
 
-/* Frox-specific design additions */
+/* Design additions */
 .gradient-heading {
-  @apply bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent;
 }
 
 .section-heading {
-  @apply text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100;
+  @apply text-xl font-bold mb-4 text-foreground;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: theme('colors.gray.100');
+  @apply bg-background;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: theme('colors.gray.300');
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: theme('colors.gray.400');
+  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
 }
 
 /* Animation utilities */
@@ -243,6 +238,14 @@
   animation: slideUp 0.5s ease-out forwards;
 }
 
+.scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -251,4 +254,23 @@
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Glassmorphism */
+.glass {
+  @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl;
+}
+
+.dark .glass {
+  @apply bg-black/30 backdrop-blur-lg border border-white/10;
+}
+
+/* Text styles */
+.text-gradient {
+  @apply bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent;
 }

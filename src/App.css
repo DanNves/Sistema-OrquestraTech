@@ -1,58 +1,31 @@
 
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* App-specific styles will go here */
+/* Most styles are now handled by Tailwind CSS in index.css */
+
+.link-hover {
+  @apply relative after:absolute after:bg-primary after:bottom-0 after:left-0 after:h-[2px] after:w-full after:origin-bottom-right after:scale-x-0 hover:after:origin-bottom-left hover:after:scale-x-100 after:transition-transform after:duration-300 after:ease-in-out;
 }
 
-/* Frox design updates */
-body {
-  background: #f8fafc;
+/* Theme transition */
+.theme-transition {
+  @apply transition-all duration-300 ease-in-out;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em rgba(13, 137, 235, 0.6));
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em rgba(13, 137, 235, 0.6));
+/* Animated gradients */
+.animated-gradient {
+  background: linear-gradient(-45deg, #0ea5e9, #8b5cf6, #10b981, #0ea5e9);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    background-position: 100% 50%;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  100% {
+    background-position: 0% 50%;
   }
-}
-
-.card {
-  padding: 2em;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(229, 231, 235, 0.5);
-  background-color: white;
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transform: translateY(-2px);
-}
-
-.read-the-docs {
-  color: #64748b;
 }
