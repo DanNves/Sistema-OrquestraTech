@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, User, Moon, Sun, Search } from 'lucide-react';
 
 interface TopbarProps {
   pageName: string;
@@ -10,7 +9,6 @@ interface TopbarProps {
 const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -37,20 +35,6 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
     };
   }, []);
 
-  useEffect(() => {
-    // Check for user preference in localStorage or system preference
-    const userPrefersDark = localStorage.getItem('darkMode') === 'true' || 
-      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    if (userPrefersDark) {
-      document.documentElement.classList.add('dark');
-      setIsDarkMode(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setIsDarkMode(false);
-    }
-  }, []);
-
   const toggleNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setNotificationsOpen(!notificationsOpen);
@@ -63,94 +47,57 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
     setNotificationsOpen(false);
   };
 
-  const toggleDarkMode = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
-      setIsDarkMode(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-      setIsDarkMode(true);
-    }
-  };
-
   return (
-    <div className="bg-background border-b border-border shadow-sm p-4 flex justify-between items-center sticky top-0 z-10 transition-colors duration-300">
+    <div className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
       <div className="flex items-center">
         <button
           onClick={toggleMobileMenu}
-          className="md:hidden text-foreground hover:text-primary/80 mr-4 focus:outline-none transition-colors"
+          className="md:hidden text-gray-500 hover:text-gray-700 mr-4 focus:outline-none"
           aria-label="Open menu"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <i className="fas fa-bars text-xl"></i>
         </button>
-        <h1 className="text-xl font-bold text-foreground">{pageName}</h1>
+        <h1 className="text-xl font-bold text-gray-800">{pageName}</h1>
       </div>
-      
-      <div className="relative flex-1 max-w-md mx-4 hidden md:block">
-        <div className="relative">
-          <input 
-            type="text"
-            placeholder="Buscar..." 
-            className="w-full bg-background border border-input rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-          />
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        </div>
-      </div>
-      
-      <div className="flex items-center space-x-3">
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 rounded-full text-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none transition-colors"
-          aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
-        >
-          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        
+      <div className="flex items-center space-x-4">
         <div className="relative" ref={notificationsRef}>
           <button
             onClick={toggleNotifications}
-            className="p-2 rounded-full text-foreground hover:bg-accent hover:text-accent-foreground relative focus:outline-none transition-colors"
-            aria-label="Notificações"
+            className="text-gray-500 hover:text-gray-700 relative focus:outline-none"
+            aria-label="Notifications"
           >
-            <Bell size={20} />
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+            <i className="fas fa-bell text-xl"></i>
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
               3
             </span>
           </button>
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-popover rounded-lg shadow-lg py-2 z-20 animate-in fade-in slide-in duration-200 border border-border">
-              <div className="px-4 py-2 border-b border-border">
-                <p className="font-medium text-popover-foreground">Notificações</p>
+            <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-1 z-20 animate-slide-down border border-gray-100">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="font-medium text-gray-800">Notificações</p>
               </div>
               <a
                 href="#"
-                className="block px-4 py-3 text-sm hover:bg-accent transition-colors border-l-2 border-transparent hover:border-primary"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <p className="font-medium text-foreground">Novo usuário solicitou acesso</p>
-                <p className="text-xs text-muted-foreground mt-1">Há 5 minutos</p>
+                Novo usuário solicitou acesso
               </a>
               <a
                 href="#"
-                className="block px-4 py-3 text-sm hover:bg-accent transition-colors border-l-2 border-transparent hover:border-primary"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <p className="font-medium text-foreground">Evento "Mixagem Avançada" amanhã</p>
-                <p className="text-xs text-muted-foreground mt-1">Às 14:00</p>
+                Evento "Mixagem Avançada" amanhã
               </a>
               <a
                 href="#"
-                className="block px-4 py-3 text-sm hover:bg-accent transition-colors border-l-2 border-transparent hover:border-primary"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <p className="font-medium text-foreground">2 novos membros na equipe</p>
-                <p className="text-xs text-muted-foreground mt-1">Há 2 horas</p>
+                2 novos membros na equipe
               </a>
-              <div className="border-t border-border px-4 py-2 text-center">
+              <div className="border-t border-gray-100 px-4 py-2">
                 <a
                   href="#"
-                  className="text-sm text-primary hover:underline transition-colors"
+                  className="text-sm text-primary-600 hover:text-primary-800 transition-colors"
                 >
                   Ver todas
                 </a>
@@ -158,40 +105,35 @@ const Topbar: React.FC<TopbarProps> = ({ pageName, toggleMobileMenu }) => {
             </div>
           )}
         </div>
-        
         <div className="relative" ref={profileRef}>
           <button
             onClick={toggleProfile}
-            className="flex items-center space-x-2 p-2 rounded-full hover:bg-accent focus:outline-none transition-colors"
+            className="flex items-center space-x-2 focus:outline-none"
             aria-label="User profile"
           >
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <User size={18} className="text-primary" />
+            <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+              <i className="fas fa-user text-primary-600"></i>
             </div>
-            <span className="hidden md:inline text-foreground font-medium text-sm">Admin</span>
+            <span className="hidden md:inline text-gray-700">Admin</span>
           </button>
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-popover rounded-lg shadow-lg py-2 z-20 animate-in fade-in slide-in duration-200 border border-border">
-              <div className="px-4 py-3 border-b border-border">
-                <p className="text-sm font-medium text-foreground">Admin</p>
-                <p className="text-xs text-muted-foreground mt-1">admin@musictech.com</p>
-              </div>
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 animate-slide-down border border-gray-100">
               <a
                 href="#"
-                className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Perfil
               </a>
               <a
                 href="#"
-                className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Configurações
               </a>
-              <div className="border-t border-border">
+              <div className="border-t border-gray-100">
                 <a
                   href="#"
-                  className="block px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Sair
                 </a>
