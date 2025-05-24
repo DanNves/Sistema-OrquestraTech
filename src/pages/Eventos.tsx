@@ -1,5 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../lib/apiClient';
+import { Evento as EventoType } from '../types/models';
 import Layout from '../components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,72 +25,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock data for events
-const mockEvents = [
-  {
-    id: 1,
-    name: 'Workshop de Mixagem',
-    date: '15/06/2025',
-    location: 'Estúdio Central',
-    responsiblePerson: 'João Silva',
-    teams: ['Equipe de Áudio', 'Equipe de Produção'],
-    maxParticipants: 20,
-    currentParticipants: 15,
-    status: 'active',
-    description: 'Workshop técnico sobre mixagem de áudio para instrumentos e voz'
-  },
-  {
-    id: 2,
-    name: 'Curso de Produção Musical',
-    date: '22/06/2025',
-    location: 'Sala de Treinamento 3',
-    responsiblePerson: 'Maria Santos',
-    teams: ['Equipe de Produção'],
-    maxParticipants: 15,
-    currentParticipants: 12,
-    status: 'active',
-    description: 'Curso introdutório sobre produção musical em estúdio'
-  },
-  {
-    id: 3, 
-    name: 'Encontro Técnico',
-    date: '05/07/2025',
-    location: 'Auditório Principal',
-    responsiblePerson: 'Carlos Mendes',
-    teams: ['Equipe Técnica', 'Equipe de Áudio'],
-    maxParticipants: 30,
-    currentParticipants: 8,
-    status: 'pending',
-    description: 'Encontro para alinhamento técnico e treinamento da equipe'
-  },
-  {
-    id: 4,
-    name: 'Festival de Música',
-    date: '18/07/2025',
-    location: 'Praça Central',
-    responsiblePerson: 'Ana Oliveira',
-    teams: ['Equipe de Sonorização', 'Equipe de Iluminação'],
-    maxParticipants: 0,
-    currentParticipants: 0,
-    status: 'pending',
-    description: 'Festival de música ao ar livre para comunidade'
-  },
-  {
-    id: 5,
-    name: 'Show ao Vivo',
-    date: '10/08/2025',
-    location: 'Teatro Municipal',
-    responsiblePerson: 'Ricardo Souza',
-    teams: ['Equipe de Iluminação'],
-    maxParticipants: 200,
-    currentParticipants: 0,
-    status: 'inactive',
-    description: 'Apresentação musical com artistas locais'
-  }
-];
 
-// Mock data for teams (for dropdown)
+// Mock data for teams (for dropdown) - these could eventually come from an API
 const mockTeams = [
   { id: 1, name: 'Equipe de Áudio' },
   { id: 2, name: 'Equipe de Produção' },
@@ -96,7 +37,7 @@ const mockTeams = [
   { id: 5, name: 'Equipe de Iluminação' }
 ];
 
-// Mock data for responsible persons
+// Mock data for responsible persons - these could eventually come from an API
 const mockResponsiblePersons = [
   { id: 1, name: 'João Silva' },
   { id: 2, name: 'Maria Santos' },
@@ -107,10 +48,48 @@ const mockResponsiblePersons = [
   { id: 7, name: 'Marcos Rocha' }
 ];
 
+
+// Function to fetch events
+const fetchEventos = async (): Promise<EventoType[]> => {
+  const response = await apiClient.get<EventoType[]>('/eventos');
+  // Assuming API returns array directly. If it's wrapped, e.g., response.data.data, adjust here.
+  return response.data; 
+};
+
+// Helper to map backend EventoType to the format expected by the local state/UI
+// This mapping is more complex due to the existing UI structure
+const mapApiEventoToLocalFormat = (apiEvento: EventoType) => {
+  let localStatus = 'pending'; // Default
+  if (apiEvento.status === 'Programado') localStatus = 'active'; // Mapping 'Programado' to 'active' for UI
+  if (apiEvento.status === 'Concluído') localStatus = 'inactive'; // Mapping 'Concluído' to 'inactive' (or a new 'completed' status if UI supports)
+  if (apiEvento.status === 'Cancelado') localStatus = 'inactive'; // Or a specific 'cancelled' status
+
+  return {
+    id: apiEvento.id,
+    name: apiEvento.titulo, // Map 'titulo' to 'name'
+    date: new Date(apiEvento.data).toLocaleDateString('pt-BR') + ` (${apiEvento.horaInicio}-${apiEvento.horaFim})`,
+    location: apiEvento.local,
+    responsiblePerson: 'API User', // Placeholder - API doesn't provide this directly for Evento
+    teams: apiEvento.equipesParticipantes, // Assuming this is an array of strings (team names or IDs)
+    maxParticipants: 0, // Placeholder - API Evento doesn't have this
+    currentParticipants: apiEvento.participantes.length, // Length of participantes array
+    status: localStatus,
+    description: apiEvento.descricao,
+    // Keep original API data if needed for editing or details
+    _originalData: apiEvento 
+  };
+};
+
+
 const Eventos = () => {
-  const [events, setEvents] = useState(mockEvents);
+  const { data: apiEventos, isLoading, error } = useQuery<EventoType[], Error>({
+    queryKey: ['eventos'],
+    queryFn: fetchEventos,
+  });
+
+  const [events, setEvents] = useState<any[]>([]); // Will hold mapped events
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(null);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -124,30 +103,36 @@ const Eventos = () => {
   });
   const [filter, setFilter] = useState('all');
 
+  useEffect(() => {
+    if (apiEventos) {
+      setEvents(apiEventos.map(mapApiEventoToLocalFormat));
+    }
+  }, [apiEventos]);
+
   // Handle input changes in the form
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: ['maxParticipants', 'currentParticipants'].includes(name) ? parseInt(value) || 0 : value
-    });
+    }));
   };
 
   // Handle select for responsible person
-  const handleResponsiblePersonChange = (value) => {
-    setFormData({
-      ...formData,
+  const handleResponsiblePersonChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
       responsiblePerson: value
-    });
+    }));
   };
 
   // Handle team selection (multiple)
-  const handleTeamChange = (teamName) => {
+  const handleTeamChange = (teamName: string) => {
     setFormData(prev => {
-      const updatedTeams = prev.teams.includes(teamName)
-        ? prev.teams.filter(t => t !== teamName)
-        : [...prev.teams, teamName];
-      
+      const currentTeams = prev.teams as string[]; // Type assertion
+      const updatedTeams = currentTeams.includes(teamName)
+        ? currentTeams.filter(t => t !== teamName)
+        : [...currentTeams, teamName];
       return { ...prev, teams: updatedTeams };
     });
   };
@@ -155,33 +140,30 @@ const Eventos = () => {
   // Open modal for creating a new event
   const openCreateModal = () => {
     setEditingEvent(null);
-    setFormData({
-      name: '',
-      date: '',
-      location: '',
-      responsiblePerson: '',
-      teams: [],
-      maxParticipants: 0,
-      currentParticipants: 0,
-      status: 'pending',
-      description: ''
+    setFormData({ // Reset form for new event
+      name: '', date: '', location: '', responsiblePerson: '',
+      teams: [], maxParticipants: 0, currentParticipants: 0,
+      status: 'pending', description: ''
     });
     setIsModalOpen(true);
   };
 
   // Open modal for editing an event
-  const openEditModal = (event) => {
+  const openEditModal = (event: any) => {
     setEditingEvent(event);
+    // Populate form with event data
+    // If event._originalData exists, prefer it for editing to have full API data
+    const sourceData = event._originalData || event;
     setFormData({
-      name: event.name,
-      date: event.date,
-      location: event.location,
-      responsiblePerson: event.responsiblePerson,
-      teams: event.teams || [],
-      maxParticipants: event.maxParticipants,
-      currentParticipants: event.currentParticipants,
-      status: event.status,
-      description: event.description
+      name: sourceData.titulo || event.name, // Use API 'titulo' or local 'name'
+      date: sourceData.data ? new Date(sourceData.data).toISOString().split('T')[0] : event.date.split(' (')[0], // Reformat for input[type=date] if needed
+      location: sourceData.local || event.location,
+      responsiblePerson: event.responsiblePerson, // This is still mock
+      teams: sourceData.equipesParticipantes || event.teams || [],
+      maxParticipants: event.maxParticipants, // Still mock
+      currentParticipants: (sourceData.participantes?.length) || event.currentParticipants,
+      status: sourceData.status === 'Programado' ? 'active' : (sourceData.status === 'Concluído' || sourceData.status === 'Cancelado' ? 'inactive' : 'pending'),
+      description: sourceData.descricao || event.description,
     });
     setIsModalOpen(true);
   };
@@ -191,38 +173,39 @@ const Eventos = () => {
     setIsModalOpen(false);
   };
 
-  // Save event (create or update)
+  // Save event (create or update) - THIS IS LOCAL ONLY FOR NOW
   const saveEvent = () => {
+    // TODO: Implement API call for create/update
     if (editingEvent) {
-      // Update existing event
       setEvents(
-        events.map(event => 
-          event.id === editingEvent.id ? { ...event, ...formData } : event
+        events.map(ev => 
+          ev.id === editingEvent.id ? { ...ev, ...formData, id: editingEvent.id } : ev
         )
       );
     } else {
-      // Create new event
       const newEvent = {
-        id: Date.now(), // Simple way to generate a unique ID
-        ...formData
+        id: `local-${Date.now()}`, // Temp local ID
+        ...formData,
       };
       setEvents([...events, newEvent]);
     }
     closeModal();
   };
 
-  // Delete an event
-  const deleteEvent = (eventId) => {
+  // Delete an event - THIS IS LOCAL ONLY FOR NOW
+  const deleteEvent = (eventId: string | number) => {
+    // TODO: Implement API call for delete
     if (confirm("Tem certeza que deseja excluir este evento?")) {
       setEvents(events.filter(event => event.id !== eventId));
     }
   };
 
-  // Change event status
-  const toggleStatus = (eventId, newStatus) => {
+  // Change event status - THIS IS LOCAL ONLY FOR NOW
+  const toggleStatus = (eventId: string | number, newStatus: string) => {
+    // TODO: Implement API call for status update
     setEvents(
-      events.map(event => 
-        event.id === eventId ? { ...event, status: newStatus } : event
+      events.map(ev => 
+        ev.id === eventId ? { ...ev, status: newStatus } : ev
       )
     );
   };
@@ -231,6 +214,41 @@ const Eventos = () => {
   const filteredEvents = filter === 'all' 
     ? events 
     : events.filter(event => event.status === filter);
+  
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Gerenciamento de Eventos</h2>
+              <p className="text-gray-500 mt-1">Gerencie os eventos técnicos musicais</p>
+            </div>
+            <Button disabled><Plus className="mr-2 h-4 w-4" /> Novo Evento</Button>
+          </div>
+          <Skeleton className="w-full h-20 mb-4" />
+          <Skeleton className="w-full h-64" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Gerenciamento de Eventos</h2>
+              <p className="text-gray-500 mt-1">Gerencie os eventos técnicos musicais</p>
+            </div>
+             <Button disabled><Plus className="mr-2 h-4 w-4" /> Novo Evento</Button>
+          </div>
+          <p className="text-red-500">Erro ao carregar eventos: {error.message}</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -322,7 +340,7 @@ const Eventos = () => {
                             className="flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-800"
                           >
                             <Users className="h-3 w-3" />
-                            {event.teams ? event.teams.length : 0}
+                            {Array.isArray(event.teams) ? event.teams.length : 0}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -392,7 +410,7 @@ const Eventos = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                        Nenhum evento encontrado com os filtros atuais.
+                        {isLoading ? 'Carregando eventos...' : 'Nenhum evento encontrado com os filtros atuais.'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -433,7 +451,8 @@ const Eventos = () => {
                   <Input 
                     id="date" 
                     name="date" 
-                    placeholder="DD/MM/AAAA" 
+                    placeholder="DD/MM/AAAA ou AAAA-MM-DD" // Allow both for input, will be formatted on display
+                    type="date" // Prefer type="date" for better UX
                     value={formData.date} 
                     onChange={handleInputChange} 
                   />
@@ -477,7 +496,7 @@ const Eventos = () => {
                     <div key={team.id} className="flex items-center space-x-2">
                       <Checkbox 
                         id={`team-${team.id}`}
-                        checked={formData.teams.includes(team.name)}
+                        checked={(formData.teams as string[]).includes(team.name)}
                         onCheckedChange={() => handleTeamChange(team.name)}
                       />
                       <label 
@@ -516,6 +535,7 @@ const Eventos = () => {
                     placeholder="0" 
                     value={formData.currentParticipants} 
                     onChange={handleInputChange} 
+                    disabled // This should be derived from API, not directly editable
                   />
                 </div>
               </div>
@@ -524,15 +544,15 @@ const Eventos = () => {
                 <Label htmlFor="status">Status</Label>
                 <Select 
                   value={formData.status} 
-                  onValueChange={(value) => setFormData({...formData, status: value})}
+                  onValueChange={(value: string) => setFormData(prev => ({...prev, status: value}))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="active">Ativo (Programado)</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectItem value="inactive">Inativo (Concluído/Cancelado)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
