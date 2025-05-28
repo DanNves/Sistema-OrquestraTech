@@ -15,12 +15,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen,
 }) => {
   const location = useLocation();
-  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(location.pathname.startsWith('/relatorios/'));
 
   const navItems = [
     {
       title: 'Dashboard',
       icon: <i className="fas fa-chart-bar text-primary-600"></i>,
+      path: '/dashboard',
       submenu: [
         { title: 'Relatório de Usuários', icon: <i className="fas fa-users text-blue-500"></i>, path: '/relatorios/usuarios' },
         { title: 'Relatório de Eventos', icon: <i className="fas fa-calendar-alt text-purple-500"></i>, path: '/relatorios/eventos' },
@@ -74,18 +75,25 @@ const Sidebar: React.FC<SidebarProps> = ({
             return (
               <li key={item.title}>
                 {item.submenu ? (
-                  <div>
-                    <button
-                      onClick={() => setIsDashboardOpen(!isDashboardOpen)}
+                  <div className="relative">
+                    <Link
+                      to={item.path}
                       className={cn(
-                        'flex items-center justify-between w-full px-4 py-2 text-left hover:bg-gray-100',
-                        location.pathname === '/dashboard' && 'bg-gray-100'
+                        'flex items-center w-full px-4 py-2 text-left hover:bg-gray-100',
+                        (location.pathname === item.path || location.pathname.startsWith('/relatorios/')) && 'bg-gray-100'
                       )}
+                      onClick={() => setIsDashboardOpen(false)}
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-grow">
                         <span className="mr-2">{item.icon}</span>
                         <span>{item.title}</span>
                       </div>
+                    </Link>
+                    <button
+                      onClick={() => setIsDashboardOpen(!isDashboardOpen)}
+                      className="absolute right-0 top-0 h-full px-4 flex items-center hover:bg-gray-200 rounded-r"
+                      aria-label="Toggle submenu"
+                    >
                       <ChevronDown className={cn('w-4 h-4 transition-transform', isDashboardOpen ? 'transform rotate-180' : '')} />
                     </button>
                     {isDashboardOpen && (
@@ -98,6 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               'flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded transition-colors hover:bg-blue-50',
                               location.pathname === subItem.path && 'bg-blue-100 text-primary-700'
                             )}
+                            onClick={() => setIsDashboardOpen(true)}
                           >
                             <span className="mr-2">{subItem.icon}</span>
                             <span>{subItem.title}</span>
