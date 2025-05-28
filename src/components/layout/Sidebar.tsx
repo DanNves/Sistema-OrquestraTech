@@ -1,24 +1,20 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
   isCollapsed: boolean;
   toggleSidebar: () => void;
   isMobileOpen: boolean;
-  onPageChange: (pageName: string) => void;
-  currentPage: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   toggleSidebar,
   isMobileOpen,
-  onPageChange,
-  currentPage,
 }) => {
+  const location = useLocation();
   const navItems = [
-    { name: 'Dashboard', icon: 'fa-tachometer-alt', path: '/', notificationCount: 0 },
+    { name: 'Dashboard', icon: 'fa-tachometer-alt', path: '/dashboard', notificationCount: 0 },
     { name: 'Equipes', icon: 'fa-users', path: '/equipes', notificationCount: 0 },
     { name: 'Eventos', icon: 'fa-calendar-alt', path: '/eventos', notificationCount: 0 },
     { name: 'Usuários', icon: 'fa-user-plus', path: '/usuarios', notificationCount: 3 },
@@ -36,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="bg-primary-600 p-2 rounded-lg">
             <i className="fas fa-music text-white text-xl logo-icon"></i>
           </div>
-          <span className="logo-text text-xl font-bold ml-3 text-gray-800">MusicTech</span>
+          <span className="logo-text text-xl font-bold ml-3 text-gray-800">OrquestraTech</span>
         </div>
         <button
           onClick={toggleSidebar}
@@ -59,25 +55,27 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-4">
         <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.name}>
-              <Link
-                to={item.path}
-                className={`nav-item flex items-center p-3 text-gray-600 rounded-lg hover:bg-primary-50 transition-colors ${
-                  currentPage === item.name ? 'active-nav' : ''
-                }`}
-                onClick={() => onPageChange(item.name)}
-              >
-                <i className={`fas ${item.icon} text-gray-500 w-5 text-center`}></i>
-                <span className="nav-text ml-3 font-medium">{item.name}</span>
-                {item.notificationCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto">
-                    {item.notificationCount}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            const isActive = location.pathname.startsWith(item.path);
+            return (
+              <li key={item.name}>
+                <Link
+                  to={item.path}
+                  className={`nav-item flex items-center p-3 text-gray-600 rounded-lg hover:bg-primary-50 transition-colors ${
+                    isActive ? 'active-nav bg-blue-50 text-blue-700 font-semibold' : ''
+                  }`}
+                >
+                  <i className={`fas ${item.icon} text-gray-500 w-5 text-center`}></i>
+                  <span className="nav-text ml-3 font-medium">{item.name}</span>
+                  {item.notificationCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto">
+                      {item.notificationCount}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

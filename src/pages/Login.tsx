@@ -17,17 +17,17 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Bem-vindo de volta</CardTitle>
-          <CardDescription className="text-center">
-            Entre com suas credenciais para acessar sua conta
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4">
+      <Card className="w-full max-w-md shadow-2xl rounded-2xl border border-blue-100">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-extrabold text-primary">Entrar</CardTitle>
+          <CardDescription className="text-muted-foreground text-base">
+            Acesse sua conta para gerenciar seus eventos musicais
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+          <CardContent className="space-y-6">
+            <div className="space-y-2 text-left">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -36,9 +36,10 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-blue-50/50 focus:bg-white"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
               <Label htmlFor="senha">Senha</Label>
               <Input
                 id="senha"
@@ -46,18 +47,19 @@ const Login = () => {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 required
+                className="bg-blue-50/50 focus:bg-white"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-semibold shadow-md hover:from-blue-600 hover:to-cyan-500 transition-colors">
               Entrar
             </Button>
             <div className="text-sm text-center text-muted-foreground">
-              Não tem uma conta?{" "}
+              Não tem uma conta?{' '}
               <Button
                 variant="link"
-                className="p-0"
+                className="p-0 text-blue-600 hover:underline"
                 onClick={() => navigate("/cadastro")}
               >
                 Criar conta

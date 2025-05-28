@@ -167,61 +167,63 @@ const Index = () => {
   ];
 
   return (
-    <Layout>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-        {statCards.map((card, index) => (
-          <StatCard key={index} {...card} />
-        ))}
-      </div>
-
-      {/* Calendar and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
-        {/* Calendar - Now takes 2 columns */}
-        <div className="lg:col-span-2">
-          <EventCalendar />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 py-8 px-2">
+      <Layout>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {statCards.map((card, index) => (
+            <StatCard key={index} {...card} />
+          ))}
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Atividade Recente</h2>
-            <a href="#" className="text-sm text-primary-600 hover:text-primary-800">
-              Ver tudo
-            </a>
+        {/* Calendar and Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Calendar - Now takes 2 columns */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6 border border-blue-100">
+            <EventCalendar />
           </div>
-          <div className="space-y-4">
-            {activities.map((activity, index) => (
-              <ActivityItem key={index} {...activity} />
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Upcoming Events and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Upcoming Events */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 lg:col-span-2 transition-all duration-300 card-hover">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Próximos Eventos</h2>
-            <a href="#" className="text-sm text-primary-600 hover:text-primary-800">
-              Ver todos
-            </a>
+          {/* Recent Activity */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-blue-100 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-blue-700">Atividade Recente</h2>
+              <a href="#" className="text-sm text-blue-500 hover:text-blue-700 font-medium">
+                Ver tudo
+              </a>
+            </div>
+            <div className="space-y-4">
+              {activities.map((activity, index) => (
+                <ActivityItem key={index} {...activity} />
+              ))}
+            </div>
           </div>
-          <EventTable events={events} />
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 transition-all duration-300 card-hover">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Ações Rápidas</h2>
-          <div className="space-y-3">
-            {quickActions.map((action, index) => (
-              <ActionButton key={index} {...action} />
-            ))}
+        {/* Upcoming Events and Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Upcoming Events */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-blue-100 lg:col-span-2">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-blue-700">Próximos Eventos</h2>
+              <a href="#" className="text-sm text-blue-500 hover:text-blue-700 font-medium">
+                Ver todos
+              </a>
+            </div>
+            <EventTable events={events} />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-blue-100 flex flex-col">
+            <h2 className="text-xl font-bold text-blue-700 mb-4">Ações Rápidas</h2>
+            <div className="space-y-3">
+              {quickActions.map((action, index) => (
+                <ActionButton key={index} {...action} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </Layout>
+      </Layout>
+    </div>
   );
 };
 
