@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -399,7 +398,15 @@ const Usuarios = () => {
   };
 
   // Define available roles and teams for the forms
-  const availableRoles = ['Administrador', 'Líder', 'Músico', 'Técnico', 'Voluntário'];
+  const availableRoles = [
+    'Músico',
+    'Organista',
+    'Instrutor(a)',
+    'Candidato(a)',
+    'Encarregado Local',
+    'Encarregado Regional',
+    'Examinadora'
+  ];
   const availableTeams = ['Coral', 'Banda', 'Técnica', 'Mídias', 'Administração'];
 
   // Filter users with pending status for the approval section
@@ -487,7 +494,7 @@ const Usuarios = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Usuário</TableHead>
-                        <TableHead className="hidden md:table-cell">Função</TableHead>
+                        <TableHead className="hidden md:table-cell">Cargo</TableHead>
                         <TableHead className="hidden md:table-cell">Equipe</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
@@ -627,7 +634,7 @@ const Usuarios = () => {
                           <TableHeader>
                             <TableRow>
                               <TableHead>Usuário</TableHead>
-                              <TableHead className="hidden md:table-cell">Função</TableHead>
+                              <TableHead className="hidden md:table-cell">Cargo</TableHead>
                               <TableHead className="hidden md:table-cell">Equipe</TableHead>
                               <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
@@ -750,7 +757,7 @@ const Usuarios = () => {
                 
                 <div className="grid gap-2">
                   <label htmlFor="role" className="text-sm font-medium">
-                    Função
+                    Cargo
                   </label>
                   <select
                     id="role"

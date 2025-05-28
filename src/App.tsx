@@ -12,6 +12,8 @@ import Equipes from "./pages/Equipes";
 import Eventos from "./pages/Eventos";
 import Usuarios from "./pages/Usuarios";
 import Configuracoes from "./pages/Configuracoes";
+import Questionarios from './pages/Questionarios';
+import RelatorioUsuarios from './pages/RelatorioUsuarios';
 
 const queryClient = new QueryClient();
 
@@ -28,8 +30,10 @@ const App = () => (
           <Route path="/dashboard" element={<Index />} />
           <Route path="/equipes" element={<Equipes />} />
           <Route path="/eventos" element={<Eventos />} />
+          <Route path="/questionarios" element={<Questionarios />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
+          <Route path="/relatorios/usuarios" element={<RelatorioUsuarios />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

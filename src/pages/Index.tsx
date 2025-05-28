@@ -134,7 +134,7 @@ const Index = () => {
       bgColor: 'bg-primary-50',
       textColor: 'text-primary-600',
       ringColor: 'focus:ring-primary-500',
-      action: 'navigate' as const, // Explicitly typing as const
+      action: 'navigate',
       destination: '/eventos',
     },
     {
@@ -143,7 +143,7 @@ const Index = () => {
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
       ringColor: 'focus:ring-green-500',
-      action: 'navigate' as const, // Explicitly typing as const
+      action: 'navigate',
       destination: '/equipes',
     },
     {
@@ -152,8 +152,8 @@ const Index = () => {
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
       ringColor: 'focus:ring-blue-500',
-      action: 'navigate' as const, // Changed from 'toast' to 'navigate'
-      destination: '/usuarios', // Added destination to users page
+      action: 'navigate',
+      destination: '/usuarios',
     },
     {
       text: 'Relatórios',
@@ -161,8 +161,8 @@ const Index = () => {
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
       ringColor: 'focus:ring-purple-500',
-      action: 'toast' as const, // Explicitly typing as const
-      message: 'Gerando relatórios...',
+      action: 'toast',
+      message: 'Gerando relatórios...'
     },
   ];
 

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -13,12 +15,24 @@ const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen,
 }) => {
   const location = useLocation();
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+
   const navItems = [
-    { name: 'Dashboard', icon: 'fa-tachometer-alt', path: '/dashboard', notificationCount: 0 },
-    { name: 'Equipes', icon: 'fa-users', path: '/equipes', notificationCount: 0 },
-    { name: 'Eventos', icon: 'fa-calendar-alt', path: '/eventos', notificationCount: 0 },
-    { name: 'Usuários', icon: 'fa-user-plus', path: '/usuarios', notificationCount: 3 },
-    { name: 'Configurações', icon: 'fa-cog', path: '/configuracoes', notificationCount: 0 },
+    {
+      title: 'Dashboard',
+      icon: <i className="fas fa-chart-bar text-primary-600"></i>,
+      submenu: [
+        { title: 'Relatório de Usuários', icon: <i className="fas fa-users text-blue-500"></i>, path: '/relatorios/usuarios' },
+        { title: 'Relatório de Eventos', icon: <i className="fas fa-calendar-alt text-purple-500"></i>, path: '/relatorios/eventos' },
+        { title: 'Estatísticas de Equipes', icon: <i className="fas fa-people-group text-green-500"></i>, path: '/relatorios/equipes' },
+        { title: 'Relatório de Inscrições', icon: <i className="fas fa-clipboard-list text-yellow-500"></i>, path: '/relatorios/inscricoes' }
+      ]
+    },
+    { title: 'Equipes', icon: <i className="fas fa-users text-green-600"></i>, path: '/equipes', notificationCount: 0 },
+    { title: 'Eventos', icon: <i className="fas fa-calendar-alt text-purple-600"></i>, path: '/eventos', notificationCount: 0 },
+    { title: 'Questionários', icon: <i className="fas fa-clipboard-question text-orange-500"></i>, path: '/questionarios', notificationCount: 0 },
+    { title: 'Usuários', icon: <i className="fas fa-user text-blue-600"></i>, path: '/usuarios', notificationCount: 3 },
+    { title: 'Configurações', icon: <i className="fas fa-cog text-gray-600"></i>, path: '/configuracoes', notificationCount: 0 },
   ];
 
   return (
@@ -58,21 +72,56 @@ const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
             return (
-              <li key={item.name}>
-                <Link
-                  to={item.path}
-                  className={`nav-item flex items-center p-3 text-gray-600 rounded-lg hover:bg-primary-50 transition-colors ${
-                    isActive ? 'active-nav bg-blue-50 text-blue-700 font-semibold' : ''
-                  }`}
-                >
-                  <i className={`fas ${item.icon} text-gray-500 w-5 text-center`}></i>
-                  <span className="nav-text ml-3 font-medium">{item.name}</span>
-                  {item.notificationCount > 0 && (
-                    <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto">
-                      {item.notificationCount}
-                    </span>
-                  )}
-                </Link>
+              <li key={item.title}>
+                {item.submenu ? (
+                  <div>
+                    <button
+                      onClick={() => setIsDashboardOpen(!isDashboardOpen)}
+                      className={cn(
+                        'flex items-center justify-between w-full px-4 py-2 text-left hover:bg-gray-100',
+                        location.pathname === '/dashboard' && 'bg-gray-100'
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-2">{item.icon}</span>
+                        <span>{item.title}</span>
+                      </div>
+                      <ChevronDown className={cn('w-4 h-4 transition-transform', isDashboardOpen ? 'transform rotate-180' : '')} />
+                    </button>
+                    {isDashboardOpen && (
+                      <div className="pl-8">
+                        {item.submenu.map((subItem, subIndex) => (
+                          <Link
+                            key={subIndex}
+                            to={subItem.path}
+                            className={cn(
+                              'flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded transition-colors hover:bg-blue-50',
+                              location.pathname === subItem.path && 'bg-blue-100 text-primary-700'
+                            )}
+                          >
+                            <span className="mr-2">{subItem.icon}</span>
+                            <span>{subItem.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`nav-item flex items-center p-3 text-gray-600 rounded-lg hover:bg-primary-50 transition-colors ${
+                      isActive ? 'active-nav bg-blue-50 text-blue-700 font-semibold' : ''
+                    }`}
+                  >
+                    <span className="mr-2">{item.icon}</span>
+                    <span className="nav-text ml-1 font-medium">{item.title}</span>
+                    {item.notificationCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-auto">
+                        {item.notificationCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </li>
             );
           })}
