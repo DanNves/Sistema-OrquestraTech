@@ -1,251 +1,328 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Calendar, MapPin, Users, Star } from 'lucide-react';
+import { Evento } from '../../server/src/models/evento.model'; // Importar a interface Evento
 
 const RelatorioEventos = () => {
-  // Dados mockados de exemplo para a tabela de eventos
-  const eventos = [
-    { id: 1, nome: 'Festival de Música 2024', data: '15/03/2024', local: 'Auditório Principal', participantes: 120, status: 'Concluído', avaliacao: 4.8, tipo: 'Festival' },
-    { id: 2, nome: 'Workshop de Canto', data: '22/03/2024', local: 'Sala de Ensaios', participantes: 45, status: 'Em Andamento', avaliacao: 4.5, tipo: 'Workshop' },
-    { id: 3, nome: 'Ensaio Geral', data: '29/03/2024', local: 'Palco Principal', participantes: 80, status: 'Agendado', avaliacao: null, tipo: 'Ensaio' },
-    { id: 4, nome: 'Apresentação Coral', data: '05/04/2024', local: 'Teatro Municipal', participantes: 150, status: 'Agendado', avaliacao: null, tipo: 'Apresentação' },
-    { id: 5, nome: 'Masterclass de Piano', data: '12/04/2024', local: 'Sala de Música', participantes: 30, status: 'Agendado', avaliacao: null, tipo: 'Masterclass' },
-    { id: 6, nome: 'Concerto de Páscoa', data: '19/04/2024', local: 'Igreja Central', participantes: 200, status: 'Agendado', avaliacao: null, tipo: 'Concerto' },
-    { id: 7, nome: 'Ensaio de Natal', data: '20/12/2023', local: 'Auditório Principal', participantes: 100, status: 'Concluído', avaliacao: 4.9, tipo: 'Ensaio' },
-    { id: 8, nome: 'Workshop de Percussão', data: '10/01/2024', local: 'Sala de Ensaios', participantes: 35, status: 'Concluído', avaliacao: 4.7, tipo: 'Workshop' },
-    { id: 9, nome: 'Apresentação de Verão', data: '15/02/2024', local: 'Praça Central', participantes: 180, status: 'Concluído', avaliacao: 4.6, tipo: 'Apresentação' },
-  ];
+  // Estados para os dados dos eventos, carregamento e erro
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Estado para controle da paginação
+  // Estado para controle da paginação e pesquisa
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
-  const totalPages = Math.ceil(eventos.length / itemsPerPage);
+  const [searchTerm, setSearchTerm] = useState('');
+  const itemsPerPage = 5; // Ajustado para 5 itens por página
 
-  // Calcular os eventos da página atual
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentEventos = eventos.slice(indexOfFirstItem, indexOfLastItem);
+  // Hook useEffect para buscar os dados da API quando o componente montar
+  useEffect(() => {
+    const fetchEventos = async () => {
+      try {
+        setLoading(true);
+        // TODO: Ajustar a URL da API se o frontend estiver em uma porta diferente do backend
+        // Assume que o backend está rodando em http://localhost:3001
+        const response = await fetch('http://localhost:3001/api/eventos');
+        
+        if (!response.ok) {
+          // Lidar com respostas de erro da API (ex: 404, 500)
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Erro HTTP: ${response.status}`);
+        }
+        
+        const data: Evento[] = await response.json();
+        
+        // Converter strings de data para objetos Date, se necessário
+        // Depende de como a data é retornada pela API (Date object vs string ISO)
+        const eventosComDatas = data.map(evento => ({
+            ...evento,
+            data: new Date(evento.data) // Exemplo: converter string ISO para Date
+        }));
 
-  // Estatísticas
-  const eventosPorTipo = eventos.reduce((acc, evento) => {
+        setEventos(eventosComDatas);
+      } catch (err) {
+        console.error('Erro ao buscar eventos:', err);
+        setError('Erro ao carregar eventos. Tente novamente mais tarde.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEventos();
+  }, []); // O array vazio garante que o useEffect roda apenas uma vez ao montar o componente
+
+  // Filtrar eventos com base no termo de pesquisa
+  const filteredEventos = eventos.filter(evento =>
+    evento.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calcular estatísticas (agora baseadas em filteredEventos para refletir a pesquisa)
+  const eventosPorTipo = filteredEventos.reduce((acc, evento) => {
     acc[evento.tipo] = (acc[evento.tipo] || 0) + 1;
     return acc;
   }, {});
 
-  const eventoComMaiorAvaliacao = eventos
-    .filter(e => e.avaliacao !== null)
-    .reduce((maxEvento, currentEvento) => {
-      return (currentEvento.avaliacao > maxEvento.avaliacao) ? currentEvento : maxEvento;
-    }, eventos[0]);
+  // Para maior participação e melhor avaliação, talvez seja melhor usar os dados originais
+  // antes da filtragem para estatísticas gerais, ou basear nas estatísticas dos dados filtrados.
+  // Por enquanto, mantendo baseado em filteredEventos para consistência com a tabela.
 
-  const eventoComMaisParticipantes = eventos.reduce((maxEvento, currentEvento) => {
-    return (currentEvento.participantes > maxEvento.participantes) ? currentEvento : maxEvento;
-  }, eventos[0]);
+  const eventoComMaiorAvaliacao = filteredEventos
+    .filter(e => e.mediaPontuacao !== undefined && e.mediaPontuacao !== null)
+    .reduce((maxEvento, currentEvento) => {
+      return (currentEvento.mediaPontuacao > maxEvento.mediaPontuacao) ? currentEvento : maxEvento;
+    }, filteredEventos[0]);
+
+  const eventoComMaisParticipantes = filteredEventos.reduce((maxEvento, currentEvento) => {
+    // Assumindo que participantes é um array e queremos a contagem de membros
+    const currentParticipantesCount = Array.isArray(currentEvento.participantes) ? currentEvento.participantes.length : 0;
+    const maxParticipantesCount = maxEvento && Array.isArray(maxEvento.participantes) ? maxEvento.participantes.length : 0;
+    return (currentParticipantesCount > maxParticipantesCount) ? currentEvento : maxEvento;
+  }, filteredEventos[0]);
+
+  // Calcular dados para paginação (agora baseada em filteredEventos)
+  const totalPages = Math.ceil(filteredEventos.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentEventosPaginados = filteredEventos.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Relatório de Eventos</h1>
 
-        {/* Cards de Resumo com Ícones */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total de Eventos</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{eventos.length}</div>
-              <p className="text-xs text-muted-foreground">Eventos cadastrados</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Próximos Eventos</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{eventos.filter(e => e.status === 'Agendado').length}</div>
-              <p className="text-xs text-muted-foreground">Eventos agendados</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Maior Participação</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{eventoComMaisParticipantes.participantes}</div>
-              <p className="text-xs text-muted-foreground">{eventoComMaisParticipantes.nome}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Melhor Avaliação</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{eventoComMaiorAvaliacao.avaliacao}</div>
-              <p className="text-xs text-muted-foreground">{eventoComMaiorAvaliacao.nome}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Indicador de Carregamento/Erro */}
+        {loading && <div className="text-center text-blue-500 mb-4">Carregando eventos...</div>}
+        {error && <div className="text-center text-red-500 mb-4">{error}</div>}
+
+        {/* Cards de Resumo com Ícones (Condicional à existência de dados e não carregando/erro) */}
+        {!loading && !error && filteredEventos.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total de Eventos</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{filteredEventos.length}</div>
+                <p className="text-xs text-muted-foreground">Eventos encontrados</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Próximos Eventos</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {/* Filtrar eventos futuros/agendados */} {/* Ajustar lógica de data se necessário */}
+                <div className="text-2xl font-bold">{filteredEventos.filter(e => e.status === 'Programado' || e.status === 'Agendado').length}</div>
+                <p className="text-xs text-muted-foreground">Eventos agendados</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Maior Participação</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                 {eventoComMaisParticipantes ? (
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-bold">{Array.isArray(eventoComMaisParticipantes.participantes) ? eventoComMaisParticipantes.participantes.length : 0}</span>
+                    <span className="text-xs text-muted-foreground">{eventoComMaisParticipantes.nome}</span>
+                  </div>
+                ) : (
+                   <span className="text-lg">N/A</span>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Melhor Avaliação</CardTitle>
+                <Star className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                 {eventoComMaiorAvaliacao ? (
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-bold">{eventoComMaiorAvaliacao.mediaPontuacao !== undefined ? eventoComMaiorAvaliacao.mediaPontuacao.toFixed(1) : 'N/A'}</span>
+                    <span className="text-xs text-muted-foreground">{eventoComMaiorAvaliacao.nome}</span>
+                  </div>
+                ) : (
+                   <span className="text-lg">N/A</span>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Área do Gráfico e Filtros */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Distribuição de Eventos por Tipo</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center min-h-[250px] bg-gray-50 rounded-md">
-              <div className="grid grid-cols-2 gap-4 w-full">
-                {Object.entries(eventosPorTipo).map(([tipo, quantidade]) => (
-                  <div key={tipo} className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
-                    <span className="font-medium">{tipo}</span>
-                    <span className="text-lg font-bold">{quantidade}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Filtros Rápidos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Tipo de Evento</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option value="">Todos</option>
-                  {Object.keys(eventosPorTipo).map(tipo => (
-                    <option key={tipo} value={tipo}>{tipo}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Status</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option value="">Todos</option>
-                  <option value="Agendado">Agendado</option>
-                  <option value="Em Andamento">Em Andamento</option>
-                  <option value="Concluído">Concluído</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Local</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option value="">Todos</option>
-                  {[...new Set(eventos.map(e => e.local))].map(local => (
-                    <option key={local} value={local}>{local}</option>
-                  ))}
-                </select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+         {!loading && !error && filteredEventos.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Distribuição de Eventos por Tipo</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center min-h-[250px] bg-gray-50 rounded-md">
+                {/* Placeholder para o gráfico de distribuição por tipo */}
+                 <div className="text-center">
+                  <Star size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600">Gráfico de Distribuição por Tipo (em breve)</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Filtros Rápidos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Filtro por Tipo de Evento */}
+                <div>
+                  <label htmlFor="tipoEvento" className="text-sm font-medium mb-2 block">Tipo de Evento</label>
+                  <select id="tipoEvento" className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Todos</option>
+                    {/* Gerar opções dinamicamente com base nos tipos de eventos carregados */}
+                    {[...new Set(eventos.map(e => e.tipo))].map(tipo => (
+                       <option key={tipo} value={tipo}>{tipo}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Filtro por Status */}
+                <div>
+                  <label htmlFor="statusEvento" className="text-sm font-medium mb-2 block">Status</label>
+                   {/* Usar filteredEventos para gerar as opções de status */}
+                  <select id="statusEvento" className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Todos</option>
+                    {[...new Set(eventos.map(e => e.status))].map(status => (
+                       <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Filtro por Local */}
+                <div>
+                  <label htmlFor="localEvento" className="text-sm font-medium mb-2 block">Local</label>
+                   {/* Usar filteredEventos para gerar as opções de local */}
+                  <select id="localEvento" className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Todos</option>
+                    {[...new Set(eventos.map(e => e.local))].map(local => (
+                       <option key={local} value={local}>{local}</option>
+                    ))}
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Controles de Exportação */}
-        <div className="flex justify-end mb-4">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            Exportar Relatório
-          </Button>
-        </div>
+         {!loading && !error && filteredEventos.length > 0 && (
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="w-4 h-4" />
+              Exportar Relatório
+            </Button>
+          </div>
+        )}
 
         {/* Área para Tabela de Eventos */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Detalhes dos Eventos</CardTitle>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Pesquisar evento..."
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                <Button variant="outline" size="sm">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Mapa
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Participantes</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avaliação</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {currentEventos.map((evento) => (
-                    <tr key={evento.id}>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{evento.nome}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.tipo}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.data}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.local}</td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.participantes}</td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          evento.status === 'Concluído' ? 'bg-green-100 text-green-800' :
-                          evento.status === 'Em Andamento' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {evento.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {evento.avaliacao ? (
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                            {evento.avaliacao}
-                          </div>
-                        ) : 'N/A'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button variant="link" size="sm" className="p-0 h-auto">Ver Detalhes</Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Controles de Paginação */}
-            <div className="flex justify-between items-center mt-4">
-              <span className="text-sm text-gray-700">
-                Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, eventos.length)} de {eventos.length} eventos
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                >
-                  Próxima
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+         {!loading && !error && (filteredEventos.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Detalhes dos Eventos</CardTitle>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Pesquisar evento..."
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Button variant="outline" size="sm">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Mapa
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Participantes</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avaliação</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {currentEventosPaginados.map((evento) => (
+                        <tr key={evento.id}>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{evento.nome}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.tipo}</td>
+                          {/* Exibir data formatada se for um objeto Date */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.data instanceof Date && !isNaN(evento.data.getTime()) ? evento.data.toLocaleDateString() : 'N/A'}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.local}</td>
+                           {/* Contar participantes se for um array */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{Array.isArray(evento.participantes) ? evento.participantes.length : 'N/A'}</td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              evento.status === 'Concluído' ? 'bg-green-100 text-green-800' :
+                              evento.status === 'Em Andamento' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {evento.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {evento.mediaPontuacao !== undefined && evento.mediaPontuacao !== null ? (
+                              <div className="flex items-center">
+                                <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                                {evento.mediaPontuacao.toFixed(1)}
+                              </div>
+                            ) : 'N/A'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <Button variant="link" size="sm" className="p-0 h-auto">Ver Detalhes</Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Controles de Paginação */}
+                <div className="flex justify-between items-center mt-4">
+                  <span className="text-sm text-gray-700">
+                    Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredEventos.length)} de {filteredEventos.length} eventos
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+         ) : (!loading && !error && filteredEventos.length === 0 ? (
+            <div className="text-center text-gray-600">Nenhum evento encontrado.</div>
+         ) : null
+         ))}
       </div>
     </Layout>
   );

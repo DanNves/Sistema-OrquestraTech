@@ -1,150 +1,251 @@
 import request from 'supertest';
-import { app, closeServer } from '../../src/index'; // Adjust path as needed
-import { Pool, PoolClient } from 'pg'; // Import PoolClient for more detailed mocking
+import { app, closeServer } from '../../src/index'; // Importa a aplicação Express e a função para fechar o servidor
+import pool from '../../src/config/db'; // Importa o pool de conexão do banco de dados
+import { PoolClient } from 'pg';
+import { v4 as uuidv4 } from 'uuid';
+import { Request, Response, NextFunction } from 'express'; // Importar tipos do Express
+import { Admin } from '../../src/models/admin.model'; // Importar a interface Admin
 
 // Mock the auth middleware
 jest.mock('../../src/middleware/auth.middleware', () => ({
-  protect: jest.fn((req, res, next) => {
+  protect: jest.fn((req: Request, res: Response, next: NextFunction) => {
     // Mock an authenticated admin user
     req.admin = { 
       id: 'test-admin-id', 
       cargo: 'SuperAdmin', 
       nome: 'Test Admin', 
       email: 'test@admin.com', 
-      permissoes: [] 
-    };
-    next();
+      permissoes: [],
+      password_hash: 'mocked_hash', // Adicionar campos faltantes
+      created_at: new Date(),
+      updated_at: new Date()
+    } as Admin; // Assegurar que o tipo é Admin
+    next(); // Permite que a requisição prossiga
   }),
-  authorize: jest.fn(() => (req, res, next) => next()),
+  authorize: jest.fn(() => (req: Request, res: Response, next: NextFunction) => next()), // Sempre autoriza
 }));
 
-// Mock the DB (pg Pool)
-jest.mock('pg', () => {
-  const mClient = {
-    query: jest.fn(),
-    release: jest.fn(),
-    // Mock other PoolClient methods if your service uses them (e.g., begin, commit, rollback)
-  };
-  const mPool = {
-    connect: jest.fn(() => Promise.resolve(mClient)), // connect() returns a Promise resolving to a client
-    query: jest.fn(), // Also mock query directly on pool if used
-  };
-  return { Pool: jest.fn(() => mPool) };
-});
-
 describe('Eventos API', () => {
-  let mockPool: jest.Mocked<Pool>;
-  let mockClient: jest.Mocked<PoolClient>;
+  let createdEventId: string; // Para armazenar o ID de um evento criado para testes
 
-  beforeEach(() => {
-    // Re-initialize mocks before each test for a clean state
-    mockPool = new Pool() as jest.Mocked<Pool>;
-    // Since connect is mocked to return a Promise, we need to access the resolved value for client methods
-    // This setup assumes connect() is called for each DB interaction in the service.
-    // If the service uses pool.query() directly, then mockPool.query needs to be set up.
-    mockClient = {
-        query: jest.fn(),
-        release: jest.fn(),
-    } as unknown as jest.Mocked<PoolClient>;
-
-    (mockPool.connect as jest.Mock).mockResolvedValue(mockClient); // Ensure connect resolves to mockClient
-    (mockPool.query as jest.Mock).mockClear(); // Clear direct pool query mock if any
-    (mockClient.query as jest.Mock).mockClear();
-    (mockClient.release as jest.Mock).mockClear();
+  // Limpa a tabela de eventos antes de cada teste para garantir isolamento
+  beforeEach(async () => {
+    await pool.query('DELETE FROM eventos;');
   });
 
-  afterAll((done) => {
-    if (closeServer) {
-      closeServer(done);
-    } else {
-      done();
+  // Fecha o servidor e o pool de conexões após todos os testes
+  afterAll(async () => {
+    await pool.query('DELETE FROM eventos;'); // Limpa a tabela no final também
+    // TODO: Garantir que o servidor só feche DEPOIS que todos os testes assíncronos terminarem.
+    // Em alguns setups Jest, `afterAll` pode precisar de `done()` ou retornar uma Promise se houver operações assíncronas longas.
+    await closeServer();
+  });
+
+  it('GET /api/eventos should return an empty array initially', async () => {
+    const res = await request(app).get('/api/eventos');
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('POST /api/eventos should create a new event', async () => {
+    const novoEvento = {
+      nome: 'Concerto de Teste POST',
+      data: '2025-01-15',
+      descricao: 'Evento criado via teste POST.',
+      local: 'Local de Teste',
+      equipesParticipantes: ['equipe-a'],
+      titulo: 'Titulo POST',
+      horaInicio: '10:00',
+      horaFim: '12:00',
+      tipo: 'Oficina',
+      status: 'Programado',
+      participantes: ['user-x']
+    };
+
+    const res = await request(app)
+      .post('/api/eventos')
+      .send(novoEvento);
+
+    expect(res.statusCode).toEqual(201); // Espera 201 Created com autenticação mockada
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.nome).toBe(novoEvento.nome);
+    // Armazena o ID para testes subsequentes
+    createdEventId = res.body.id;
+
+    // Opcional: Verificar se foi realmente inserido no banco de dados
+    const client = await pool.connect();
+    try {
+      const dbResult = await client.query('SELECT * FROM eventos WHERE id = $1;', [createdEventId]);
+      expect(dbResult.rowCount).toBe(1);
+      expect(dbResult.rows[0].nome).toBe(novoEvento.nome);
+    } finally {
+      client.release();
     }
   });
 
-  describe('POST /api/eventos', () => {
-    it('should create an event when authenticated and data is valid', async () => {
-      const eventData = { 
-        nome: 'Integration Test Event Nome', // Added nome
-        titulo: 'Integration Test Event', 
-        descricao: 'Testing event creation', 
-        data: '2024-12-01', 
+  // Teste para GET /api/eventos/:id
+  it('GET /api/eventos/:id should return the event if found', async () => {
+    // Cria um evento diretamente no banco de dados para este teste
+    const client = await pool.connect();
+    const eventToFind = {
+        id: uuidv4(),
+        nome: 'Evento para GET by ID',
+        data: '2025-02-20',
+        descricao: 'Descrição',
+        local: 'Online',
+        equipesParticipantes: [],
+        titulo: 'Título',
         horaInicio: '14:00', 
         horaFim: '16:00', 
-        local: 'Online', 
-        tipo: 'Oficina', 
-        status: 'Programado',
-        // equipesParticipantes and participantes can be omitted if they default to empty arrays
-      };
-      
-      // Mock the response from the DB INSERT query in EventoService.createEvento
-      const dbResponse = { 
-        ...eventData, 
-        id: 'mock-generated-event-id', // Simulate ID generation
-        data: new Date(eventData.data), // Ensure data is a Date object if service returns it as such
-        equipesParticipantes: [], 
-        participantes: [], 
-        mediaPontuacao: 0,
-        // created_at and updated_at are usually set by DB or service
-      };
-      (mockClient.query as jest.Mock).mockResolvedValueOnce({ rows: [dbResponse], rowCount: 1 });
-
-      const response = await request(app)
-        .post('/api/eventos')
-        .send(eventData);
-
-      expect(response.status).toBe(201);
-      // The response.body will be the direct result from EventoService.createEvento
-      expect(response.body).toMatchObject({
-        ...eventData, // Original data sent
-        id: dbResponse.id, // Check if ID is present
-        data: dbResponse.data.toISOString(), // Compare ISO strings for dates
-        mediaPontuacao: 0, // Check default value
-      });
-      expect(mockPool.connect).toHaveBeenCalledTimes(1);
-      expect(mockClient.query).toHaveBeenCalledTimes(1); // Check if DB was called via client
-      expect(mockClient.release).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return 400 if required fields are missing (e.g., titulo)', async () => {
-      const eventData = { 
-        descricao: 'Missing title test',
-        data: '2024-12-02',
-        horaInicio: '10:00',
-        horaFim: '11:00',
         tipo: 'Palestra',
         status: 'Programado',
-        nome: 'Test'
-        // titulo is missing
-      };
-      const response = await request(app)
-        .post('/api/eventos')
-        .send(eventData);
-      
-      expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Missing required fields'); 
-      // Ensure DB was not called
-      expect(mockClient.query).not.toHaveBeenCalled();
+        participantes: [], 
+        mediaPontuacao: 0 // Coluna com letra minúscula no DB
+    };
+    try {
+        await client.query(`
+            INSERT INTO eventos (id, nome, data, descricao, local, equipesParticipantes, titulo, horaInicio, horaFim, tipo, status, participantes, mediaPontuacao)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `, [eventToFind.id, eventToFind.nome, eventToFind.data, eventToFind.descricao, eventToFind.local, eventToFind.equipesParticipantes, eventToFind.titulo, eventToFind.horaInicio, eventToFind.horaFim, eventToFind.tipo, eventToFind.status, eventToFind.participantes, eventToFind.mediaPontuacao]);
+    } finally {
+        client.release();
+    }
+
+    const res = await request(app).get(`/api/eventos/${eventToFind.id}`);
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveProperty('id', eventToFind.id);
+    expect(res.body.nome).toBe(eventToFind.nome);
+  });
+
+  it('GET /api/eventos/:id should return 404 if event is not found', async () => {
+    const nonExistentId = uuidv4(); // Um ID que não existe no DB
+    const res = await request(app).get(`/api/eventos/${nonExistentId}`);
+    expect(res.statusCode).toEqual(404);
+    expect(res.body).toHaveProperty('message', 'Evento não encontrado.');
     });
 
-     it('should return 400 if required field "nome" is missing', async () => {
-      const eventData = { 
-        titulo: 'Missing Nome Test',
-        descricao: 'Testing missing nome',
-        data: '2024-12-03', 
-        horaInicio: '14:00', 
-        horaFim: '16:00', 
-        local: 'Online', 
-        tipo: 'Oficina', 
+  // Teste para PUT /api/eventos/:id
+  it('PUT /api/eventos/:id should update an event', async () => {
+     // Cria um evento para atualizar
+     const client = await pool.connect();
+     const eventToUpdate = {
+         id: uuidv4(),
+         nome: 'Evento Original',
+         data: '2025-03-01',
+         descricao: 'Descrição Original',
+         local: 'Local Original',
+         equipesParticipantes: [],
+         titulo: 'Título Original',
+         horaInicio: '09:00',
+        horaFim: '11:00',
+         tipo: 'Workshop',
         status: 'Programado',
-        // nome is missing
-      };
-      const response = await request(app)
-        .post('/api/eventos')
-        .send(eventData);
+         participantes: [],
+         mediaPontuacao: 0
+     };
+     try {
+         await client.query(`
+             INSERT INTO eventos (id, nome, data, descricao, local, equipesParticipantes, titulo, horaInicio, horaFim, tipo, status, participantes, mediaPontuacao)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         `, [eventToUpdate.id, eventToUpdate.nome, eventToUpdate.data, eventToUpdate.descricao, eventToUpdate.local, eventToUpdate.equipesParticipantes, eventToUpdate.titulo, eventToUpdate.horaInicio, eventToUpdate.horaFim, eventToUpdate.tipo, eventToUpdate.status, eventToUpdate.participantes, eventToUpdate.mediaPontuacao]);
+     } finally {
+         client.release();
+     }
+
+    const updatedData = {
+      nome: 'Evento Atualizado PUT',
+      local: 'Novo Local',
+      status: 'Concluído'
+    };
+
+    const res = await request(app)
+      .put(`/api/eventos/${eventToUpdate.id}`)
+      .send(updatedData);
       
-      expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Missing required fields');
-      expect(mockClient.query).not.toHaveBeenCalled();
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveProperty('id', eventToUpdate.id);
+    expect(res.body.nome).toBe(updatedData.nome);
+    expect(res.body.local).toBe(updatedData.local);
+    expect(res.body.status).toBe(updatedData.status);
+    // Verifica se outros campos não foram alterados
+    expect(res.body.descricao).toBe(eventToUpdate.descricao);
+
+    // Opcional: Verificar se foi realmente atualizado no banco de dados
+    const clientAfterUpdate = await pool.connect();
+    try {
+      const dbResult = await clientAfterUpdate.query('SELECT * FROM eventos WHERE id = $1;', [eventToUpdate.id]);
+      expect(dbResult.rowCount).toBe(1);
+      expect(dbResult.rows[0].nome).toBe(updatedData.nome);
+      expect(dbResult.rows[0].local).toBe(updatedData.local);
+      expect(dbResult.rows[0].status).toBe(updatedData.status);
+    } finally {
+      clientAfterUpdate.release();
+    }
     });
+
+  it('PUT /api/eventos/:id should return 404 if event is not found for update', async () => {
+    const nonExistentId = uuidv4();
+    const updatedData = { nome: 'Nome Inexistente' };
+
+    const res = await request(app)
+      .put(`/api/eventos/${nonExistentId}`)
+      .send(updatedData);
+
+    expect(res.statusCode).toEqual(404);
+    expect(res.body).toHaveProperty('message', 'Evento não encontrado para atualização.');
+  });
+
+  // Teste para DELETE /api/eventos/:id
+  it('DELETE /api/eventos/:id should delete an event', async () => {
+    // Cria um evento para excluir
+    const client = await pool.connect();
+    const eventToDelete = {
+        id: uuidv4(),
+        nome: 'Evento para DELETE',
+        data: '2025-04-05',
+        descricao: 'Descrição',
+        local: 'Local',
+        equipesParticipantes: [],
+        titulo: 'Título',
+        horaInicio: '17:00',
+        horaFim: '18:00',
+        tipo: 'Outro',
+        status: 'Programado',
+        participantes: [],
+        mediaPontuacao: 0
+    };
+    try {
+        await client.query(`
+            INSERT INTO eventos (id, nome, data, descricao, local, equipesParticipantes, titulo, horaInicio, horaFim, tipo, status, participantes, mediaPontuacao)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `, [eventToDelete.id, eventToDelete.nome, eventToDelete.data, eventToDelete.descricao, eventToDelete.local, eventToDelete.equipesParticipantes, eventToDelete.titulo, eventToDelete.horaInicio, eventToDelete.horaFim, eventToDelete.tipo, eventToDelete.status, eventToDelete.participantes, eventToDelete.mediaPontuacao]);
+    } finally {
+        client.release();
+    }
+
+    const res = await request(app)
+      .delete(`/api/eventos/${eventToDelete.id}`);
+      
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveProperty('message', 'Evento excluído com sucesso.');
+
+    // Opcional: Verificar se foi realmente excluído do banco de dados
+    const clientAfterDelete = await pool.connect();
+    try {
+      const dbResult = await clientAfterDelete.query('SELECT * FROM eventos WHERE id = $1;', [eventToDelete.id]);
+      expect(dbResult.rowCount).toBe(0);
+    } finally {
+      clientAfterDelete.release();
+    }
+  });
+
+  it('DELETE /api/eventos/:id should return 404 if event is not found for deletion', async () => {
+    const nonExistentId = uuidv4();
+    const res = await request(app)
+      .delete(`/api/eventos/${nonExistentId}`);
+
+    expect(res.statusCode).toEqual(404);
+    expect(res.body).toHaveProperty('message', 'Evento não encontrado para exclusão.');
   });
 });

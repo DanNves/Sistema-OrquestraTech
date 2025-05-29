@@ -6,8 +6,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_default_secret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const JWT_SECRET = process.env.JWT_SECRET || 'seu_segredo_jwt_padrao';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
+
+const signToken = (id: string, cargo: string): string => {
+  return jwt.sign({ id, cargo }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
+};
 
 export const loginAdmin = async (
   email: string,
@@ -26,15 +32,7 @@ export const loginAdmin = async (
     }
 
     // Admin matched, create JWT
-    const payload = {
-      id: admin.id,
-      cargo: admin.cargo,
-      permissoes: admin.permissoes || [], // Ensure permissoes is an array
-    };
-
-    const token = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
-    });
+    const token = signToken(admin.id, admin.cargo);
 
     // Return token and admin details (without password hash)
     const { password_hash, ...adminDetails } = admin;

@@ -1,23 +1,24 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 
-export const adminLoginHandler = async (req: Request, res: Response) => {
+export const loginAdminHandler = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
 
     const result = await authService.loginAdmin(email, password);
 
     if (!result) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-    res.status(200).json(result);
+    res.status(200).json({ token: result.token, admin: result.admin });
   } catch (error) {
-    console.error('Error in adminLoginHandler:', error);
-    res.status(500).json({ message: 'Login failed', error: (error as Error).message });
+    console.error('Erro no controlador de login:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
   }
 };
 

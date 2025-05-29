@@ -169,19 +169,22 @@ export const createUsuariosTable = async () => {
 export const createEventosTable = async () => {
   const client = await pool.connect();
   try {
+    // Primeiro, dropar a tabela existente
+    await client.query(`DROP TABLE IF EXISTS eventos CASCADE;`);
+    
+    // Depois, criar a tabela com a nova estrutura
     await client.query(`
-      CREATE TABLE IF NOT EXISTS eventos (
+      CREATE TABLE eventos (
         id TEXT PRIMARY KEY,
         nome TEXT NOT NULL,
         data DATE NOT NULL,
         descricao TEXT,
         local TEXT,
         equipesParticipantes TEXT[],
-        -- Campos adicionados para o subtask atual
         titulo TEXT NOT NULL,
         horaInicio TIME NOT NULL,
         horaFim TIME NOT NULL,
-        tipo TEXT CHECK (tipo IN ('Palestra', 'Oficina', 'Show Técnico', 'Outro')),
+        tipo TEXT CHECK (tipo IN ('Ensaio de Seção', 'Ensaio Geral', 'Encontro Técnico')),
         status TEXT CHECK (status IN ('Programado', 'Concluído', 'Cancelado')),
         participantes TEXT[],
         mediaPontuacao REAL DEFAULT 0,
@@ -189,7 +192,7 @@ export const createEventosTable = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('Eventos table created successfully or already exists.');
+    console.log('Eventos table created successfully with new structure.');
   } catch (error) {
     console.error('Error creating eventos table:', error);
   } finally {

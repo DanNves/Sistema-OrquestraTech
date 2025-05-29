@@ -10,7 +10,7 @@ jest.mock('pg', () => {
     release: jest.fn(),
   };
   const mPool = {
-    connect: jest.fn(() => mClient),
+    connect: jest.fn(() => Promise.resolve(mClient)),
     query: jest.fn(), // Also mock query directly on pool for services that might use it without explicit connect
   };
   return { Pool: jest.fn(() => mPool) };
@@ -42,14 +42,13 @@ describe('EventoService', () => {
 
   describe('createEvento', () => {
     it('should create an event and return it', async () => {
-      const eventData: Omit<Evento, 'id' | 'mediaPontuacao' | 'inscricoes'> = {
-        nome: 'Test Event Nome', // Added nome as it's required by type, though not in original example
+      const eventData: Omit<Evento, 'id' | 'mediaPontuacao' | 'inscricoes' | 'created_at' | 'updated_at'> = {
+        nome: 'Test Event Nome',
         data: new Date('2024-01-01'),
         titulo: 'Test Event Titulo',
         horaInicio: '10:00',
         horaFim: '12:00',
         tipo: 'Palestra',
-        // Optional fields can be omitted or set to null/defaults based on your model
         descricao: 'A test event',
         local: 'Online',
         status: 'Programado',
@@ -60,8 +59,7 @@ describe('EventoService', () => {
       const expectedDbEventRow = {
         id: mockUuid,
         ...eventData,
-        mediaPontuacao: 0, // Default from service logic
-        // created_at and updated_at are typically handled by DB or service, not passed in
+        mediaPontuacao: 0, // Default do DB, mas incluído no retorno
       };
       
       (mockClient.query as jest.Mock).mockResolvedValueOnce({ rows: [expectedDbEventRow], rowCount: 1 });
@@ -87,7 +85,7 @@ describe('EventoService', () => {
           eventData.tipo,
           eventData.status,
           eventData.participantes,
-          0, // mediaPontuacao default
+          // Removido 0 para mediaPontuacao, pois não é passado na query de INSERT real
         ]
       );
       expect(mockClient.release).toHaveBeenCalledTimes(1);
@@ -110,7 +108,8 @@ describe('EventoService', () => {
         equipesParticipantes: ['team-1'],
         participantes: ['user-1'],
         mediaPontuacao: 4.5,
-        // inscricoes field not in DB table, might be populated by other logic
+        created_at: new Date(), // Adicionado para corresponder à interface
+        updated_at: new Date()  // Adicionado para corresponder à interface
       };
       (mockClient.query as jest.Mock).mockResolvedValueOnce({ rows: [mockEvent], rowCount: 1 });
 
@@ -141,4 +140,6 @@ describe('EventoService', () => {
       expect(mockClient.release).toHaveBeenCalledTimes(1);
     });
   });
+
+  // TODO: Adicionar testes para getAllEventos, updateEvento e deleteEvento
 });

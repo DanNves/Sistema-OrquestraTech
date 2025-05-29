@@ -80,9 +80,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                       to={item.path}
                       className={cn(
                         'flex items-center w-full px-4 py-2 text-left hover:bg-gray-100',
-                        (location.pathname === item.path || location.pathname.startsWith('/relatorios/')) && 'bg-gray-100'
+                        (location.pathname === item.path || 
+                         (item.title === 'Dashboard' && location.pathname.startsWith('/relatorios/'))) && 'bg-gray-100'
                       )}
-                      onClick={() => setIsDashboardOpen(false)}
+                      onClick={() => {
+                        if (item.title === 'Dashboard') setIsDashboardOpen(false);
+                      }}
                     >
                       <div className="flex items-center flex-grow">
                         <span className="mr-2">{item.icon}</span>
@@ -90,13 +93,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                     </Link>
                     <button
-                      onClick={() => setIsDashboardOpen(!isDashboardOpen)}
+                      onClick={() => {
+                        if (item.title === 'Dashboard') setIsDashboardOpen(!isDashboardOpen);
+                      }}
                       className="absolute right-0 top-0 h-full px-4 flex items-center hover:bg-gray-200 rounded-r"
                       aria-label="Toggle submenu"
                     >
-                      <ChevronDown className={cn('w-4 h-4 transition-transform', isDashboardOpen ? 'transform rotate-180' : '')} />
+                      <ChevronDown className={cn('w-4 h-4 transition-transform', 
+                        (item.title === 'Dashboard' && isDashboardOpen) ? 'transform rotate-180' : '')} 
+                      />
                     </button>
-                    {isDashboardOpen && (
+                    {(item.title === 'Dashboard' && isDashboardOpen) && (
                       <div className="pl-8">
                         {item.submenu.map((subItem, subIndex) => (
                           <Link
@@ -106,7 +113,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                               'flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded transition-colors hover:bg-blue-50',
                               location.pathname === subItem.path && 'bg-blue-100 text-primary-700'
                             )}
-                            onClick={() => setIsDashboardOpen(true)}
+                            onClick={() => {
+                              if (item.title === 'Dashboard') setIsDashboardOpen(true);
+                            }}
                           >
                             <span className="mr-2">{subItem.icon}</span>
                             <span>{subItem.title}</span>

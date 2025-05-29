@@ -25,6 +25,8 @@ const Cadastro = () => {
     confirmarSenha: "",
     cargo: ""
   });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -36,13 +38,23 @@ const Cadastro = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+
     // TODO: Implementar lógica de cadastro
-    toast({
-      title: "Solicitação enviada!",
-      description: "Solicitação de acesso enviada ao Administrador!",
-      variant: "success"
-    });
-    setTimeout(() => navigate("/login"), 2000);
+    console.log("Dados de cadastro:", formData);
+
+    // Simulação de cadastro bem-sucedido e redirecionamento
+    setTimeout(() => {
+      setLoading(false);
+      console.log('Cadastro simulado bem-sucedido');
+      toast({
+        title: "Solicitação enviada!",
+        description: "Solicitação de acesso enviada ao Administrador!",
+        variant: "success"
+      });
+      setTimeout(() => navigate("/login"), 2000);
+    }, 1000);
   };
 
   return (
@@ -123,9 +135,10 @@ const Cadastro = () => {
               />
             </div>
           </CardContent>
+          {error && <div className="text-red-500 text-sm w-full text-center">{error}</div>}
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-semibold shadow-md hover:from-blue-600 hover:to-cyan-500 transition-colors">
-              Criar Conta
+            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-semibold shadow-md hover:from-blue-600 hover:to-cyan-500 transition-colors" disabled={loading}>
+              {loading ? 'Cadastrando...' : 'Cadastrar'}
             </Button>
             <div className="text-sm text-center text-muted-foreground">
               Já tem uma conta?{' '}

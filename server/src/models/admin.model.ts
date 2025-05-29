@@ -1,7 +1,13 @@
 import { Usuario } from './usuario.model';
 
 // Admin pode herdar de Usuario ou ter campos específicos
-export interface Admin extends Usuario {
-  // Campos específicos do Admin, se houver
-  // Exemplo: nivelAcesso: number;
+export interface Admin {
+  id: string;
+  nome: string;
+  email: string;
+  cargo: 'SuperAdmin' | 'Organizador' | 'Moderador';
+  permissoes: string[];
+  password_hash: string;
+  created_at: Date;
+  updated_at: Date;
 }

@@ -121,8 +121,14 @@ export const deleteAdmin = async (id: string): Promise<boolean> => {
   const client = await pool.connect();
   try {
     const result = await client.query('DELETE FROM admins WHERE id = $1;', [id]);
-    return result.rowCount > 0;
+    return result.rowCount !== null && result.rowCount > 0;
   } finally {
     client.release();
   }
 };
+
+// Função auxiliar para remover password_hash de um array de admins
+// Pode ser útil para listar admins sem expor o hash da senha
+// const omitPasswordHashArray = (admins: Admin[]): Omit<Admin, 'password_hash'>[] => {
+//   return admins.map(admin => omitPasswordHash(admin));
+// };
