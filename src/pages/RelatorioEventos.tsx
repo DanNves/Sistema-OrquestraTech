@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Download, Calendar, MapPin, Users, Star } from 'lucide-react';
 import { Evento } from '../../server/src/models/evento.model'; // Importar a interface Evento
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import * as XLSX from 'xlsx';
+
+// Cores para os diferentes tipos de eventos
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const RelatorioEventos = () => {
   // Estados para os dados dos eventos, carregamento e erro
@@ -15,6 +20,11 @@ const RelatorioEventos = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 5; // Ajustado para 5 itens por página
+
+  // Estados para os filtros
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroLocal, setFiltroLocal] = useState('');
 
   // Hook useEffect para buscar os dados da API quando o componente montar
   useEffect(() => {
@@ -52,10 +62,15 @@ const RelatorioEventos = () => {
     fetchEventos();
   }, []); // O array vazio garante que o useEffect roda apenas uma vez ao montar o componente
 
-  // Filtrar eventos com base no termo de pesquisa
-  const filteredEventos = eventos.filter(evento =>
-    evento.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar eventos com base em todos os critérios
+  const filteredEventos = eventos.filter(evento => {
+    const matchSearch = evento.nome.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchTipo = !filtroTipo || evento.tipo === filtroTipo;
+    const matchStatus = !filtroStatus || evento.status === filtroStatus;
+    const matchLocal = !filtroLocal || evento.local === filtroLocal;
+
+    return matchSearch && matchTipo && matchStatus && matchLocal;
+  });
 
   // Calcular estatísticas (agora baseadas em filteredEventos para refletir a pesquisa)
   const eventosPorTipo = filteredEventos.reduce((acc, evento) => {
@@ -85,6 +100,46 @@ const RelatorioEventos = () => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentEventosPaginados = filteredEventos.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Preparar dados para o gráfico
+  const dadosGrafico = Object.entries(eventosPorTipo).map(([tipo, quantidade]) => ({
+    name: tipo,
+    value: quantidade
+  }));
+
+  // Função para exportar relatório
+  const exportarRelatorio = () => {
+    // Preparar dados para exportação
+    const dadosExportacao = filteredEventos.map(evento => ({
+      'Nome': evento.nome,
+      'Tipo': evento.tipo,
+      'Data': new Date(evento.data).toLocaleDateString(),
+      'Hora Início': evento.horaInicio,
+      'Hora Fim': evento.horaFim,
+      'Local': evento.local,
+      'Status': evento.status,
+      'Participantes': Array.isArray(evento.participantes) ? evento.participantes.length : 0,
+      'Avaliação Média': evento.mediaPontuacao?.toFixed(1) || 'N/A'
+    }));
+
+    // Criar planilha
+    const ws = XLSX.utils.json_to_sheet(dadosExportacao);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Relatório de Eventos');
+
+    // Adicionar estatísticas em uma nova aba
+    const estatisticas = [
+      { 'Métrica': 'Total de Eventos', 'Valor': filteredEventos.length },
+      { 'Métrica': 'Eventos Agendados', 'Valor': filteredEventos.filter(e => e.status === 'Programado' || e.status === 'Agendado').length },
+      { 'Métrica': 'Maior Participação', 'Valor': eventoComMaisParticipantes ? (Array.isArray(eventoComMaisParticipantes.participantes) ? eventoComMaisParticipantes.participantes.length : 0) : 0 },
+      { 'Métrica': 'Melhor Avaliação', 'Valor': eventoComMaiorAvaliacao ? (eventoComMaiorAvaliacao.mediaPontuacao?.toFixed(1) || 'N/A') : 'N/A' }
+    ];
+    const wsStats = XLSX.utils.json_to_sheet(estatisticas);
+    XLSX.utils.book_append_sheet(wb, wsStats, 'Estatísticas');
+
+    // Exportar arquivo
+    XLSX.writeFile(wb, 'relatorio_eventos.xlsx');
+  };
 
   return (
     <Layout>
@@ -161,12 +216,27 @@ const RelatorioEventos = () => {
               <CardHeader>
                 <CardTitle>Distribuição de Eventos por Tipo</CardTitle>
               </CardHeader>
-              <CardContent className="flex items-center justify-center min-h-[250px] bg-gray-50 rounded-md">
-                {/* Placeholder para o gráfico de distribuição por tipo */}
-                 <div className="text-center">
-                  <Star size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600">Gráfico de Distribuição por Tipo (em breve)</p>
-                </div>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dadosGrafico}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    >
+                      {dadosGrafico.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
             <Card>
@@ -177,36 +247,62 @@ const RelatorioEventos = () => {
                 {/* Filtro por Tipo de Evento */}
                 <div>
                   <label htmlFor="tipoEvento" className="text-sm font-medium mb-2 block">Tipo de Evento</label>
-                  <select id="tipoEvento" className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  <select 
+                    id="tipoEvento" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={filtroTipo}
+                    onChange={(e) => setFiltroTipo(e.target.value)}
+                  >
                     <option value="">Todos</option>
-                    {/* Gerar opções dinamicamente com base nos tipos de eventos carregados */}
                     {[...new Set(eventos.map(e => e.tipo))].map(tipo => (
-                       <option key={tipo} value={tipo}>{tipo}</option>
+                      <option key={tipo} value={tipo}>{tipo}</option>
                     ))}
                   </select>
                 </div>
                 {/* Filtro por Status */}
                 <div>
                   <label htmlFor="statusEvento" className="text-sm font-medium mb-2 block">Status</label>
-                   {/* Usar filteredEventos para gerar as opções de status */}
-                  <select id="statusEvento" className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  <select 
+                    id="statusEvento" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={filtroStatus}
+                    onChange={(e) => setFiltroStatus(e.target.value)}
+                  >
                     <option value="">Todos</option>
                     {[...new Set(eventos.map(e => e.status))].map(status => (
-                       <option key={status} value={status}>{status}</option>
+                      <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
                 </div>
                 {/* Filtro por Local */}
                 <div>
                   <label htmlFor="localEvento" className="text-sm font-medium mb-2 block">Local</label>
-                   {/* Usar filteredEventos para gerar as opções de local */}
-                  <select id="localEvento" className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  <select 
+                    id="localEvento" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={filtroLocal}
+                    onChange={(e) => setFiltroLocal(e.target.value)}
+                  >
                     <option value="">Todos</option>
                     {[...new Set(eventos.map(e => e.local))].map(local => (
-                       <option key={local} value={local}>{local}</option>
+                      <option key={local} value={local}>{local}</option>
                     ))}
                   </select>
                 </div>
+                {/* Botão para limpar filtros */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    setFiltroTipo('');
+                    setFiltroStatus('');
+                    setFiltroLocal('');
+                    setSearchTerm('');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -215,7 +311,12 @@ const RelatorioEventos = () => {
         {/* Controles de Exportação */}
          {!loading && !error && filteredEventos.length > 0 && (
           <div className="flex justify-end mb-4">
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={exportarRelatorio}
+            >
               <Download className="w-4 h-4" />
               Exportar Relatório
             </Button>

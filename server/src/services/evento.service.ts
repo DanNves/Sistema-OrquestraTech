@@ -45,6 +45,19 @@ export const createEvento = async (
   
   const client = await pool.connect();
   try {
+    // Verificar se já existe um evento com o mesmo nome na mesma data e hora
+    const checkQuery = `
+      SELECT * FROM eventos 
+      WHERE nome = $1 
+      AND data = $2 
+      AND horainicio = $3;
+    `;
+    const checkResult = await client.query(checkQuery, [nome.trim(), data, horaInicio]);
+    
+    if (checkResult.rows.length > 0) {
+      throw new Error('Já existe um evento com este nome na mesma data e hora');
+    }
+
     console.log('Dados recebidos para criação:', eventData); // Debug
 
     const query = `
@@ -104,8 +117,58 @@ export const updateEvento = async (
       return null;
     }
 
-    // Construir dinamicamente a query de update
-    const fieldsToUpdate = eventData;
+    const fieldsToUpdate: Partial<Omit<Evento, 'id' | 'inscricoes' | 'created_at' | 'updated_at' | 'mediaPontuacao'>> = {};
+    
+    // Permitir a atualização do status, independentemente do estado atual
+    if (eventData.status !== undefined) {
+      fieldsToUpdate.status = eventData.status;
+    }
+
+    // Para outros campos, aplicar a validação de estado
+    const otherFields: (keyof Partial<Omit<Evento, 'id' | 'inscricoes' | 'created_at' | 'updated_at' | 'mediaPontuacao' | 'status'>>)[] = [
+      'nome', 'data', 'descricao', 'local', 'equipesParticipantes', 'titulo', 'horaInicio', 'horaFim', 'tipo', 'participantes'
+    ];
+
+    for (const field of otherFields) {
+      if (eventData[field] !== undefined) {
+        if (existingEvento.status !== 'Programado') {
+           throw new Error('Apenas eventos programados podem ter outros campos editados');
+        }
+        fieldsToUpdate[field] = eventData[field];
+      }
+    }
+
+    // Se nenhum campo foi alterado (além de potencialmente o status), retornar o evento existente
+    if (Object.keys(fieldsToUpdate).length === 0) {
+       // Adicionar updated_at mesmo que nenhum campo tenha sido alterado
+       const updateTimestampQuery = `UPDATE eventos SET "updated_at" = NOW() WHERE id = $1 RETURNING *;`;
+       const result = await client.query(updateTimestampQuery, [id]);
+       return result.rows[0] || null;
+    }
+
+    // Se estiver atualizando nome, data ou hora, verificar conflitos
+    // Esta validação agora está dentro do loop de outros campos, mas vamos garantir que cubra a combinação
+    if ( (eventData.nome !== undefined || eventData.data !== undefined || eventData.horaInicio !== undefined) && existingEvento.status === 'Programado' ) {
+         const checkQuery = `
+           SELECT * FROM eventos 
+           WHERE nome = $1 
+           AND data = $2 
+           AND horainicio = $3
+           AND id != $4;
+         `;
+         const checkResult = await client.query(checkQuery, [
+           eventData.nome?.trim() || existingEvento.nome,
+           eventData.data || existingEvento.data,
+           eventData.horaInicio || existingEvento.horainicio,
+           id
+         ]);
+         
+         if (checkResult.rows.length > 0) {
+           throw new Error('Já existe um evento com este nome na mesma data e hora');
+         }
+    }
+
+    // Construir dinamicamente a query de update com base nos campos permitidos
     // Mapeamento de campos camelCase para nomes de coluna snake_case (ou lowercase)
     const columnMapping: { [key: string]: string } = {
       nome: 'nome',
@@ -130,7 +193,8 @@ export const updateEvento = async (
         if (fieldsToUpdate.hasOwnProperty(key)) {
             const dbColumnName = columnMapping[key];
             // Verificar se o campo é permitido e tem um valor definido
-            if (dbColumnName && fieldsToUpdate[key as keyof typeof fieldsToUpdate] !== undefined) {
+            // A verificação de undefined já foi feita ao construir fieldsToUpdate
+            if (dbColumnName) {
                 setClause += `"${dbColumnName}" = $${valueCount}, `;
                 values.push(fieldsToUpdate[key as keyof typeof fieldsToUpdate]);
                 valueCount++;
@@ -138,17 +202,28 @@ export const updateEvento = async (
         }
     }
 
+    // Se não há campos para atualizar (exceto updated_at, que é adicionado a seguir),
+    // isso significa que apenas o status pode ter sido passado e já foi adicionado a fieldsToUpdate.
+    // Ou, se fieldsToUpdate estava vazio, não precisamos fazer nada além de atualizar updated_at (lidado acima).
+    // Se setClause ainda está vazio aqui, significa que fieldsToUpdate estava vazio.
+    if (setClause === '') {
+      // Isso não deve acontecer se o status foi passado, mas por segurança:
+      if (Object.keys(fieldsToUpdate).length === 0) {
+           // Nenhuma atualização de campos solicitada (além do updated_at)
+           const updateTimestampQuery = `UPDATE eventos SET "updated_at" = NOW() WHERE id = $1 RETURNING *;`;
+           const result = await client.query(updateTimestampQuery, [id]);
+           return result.rows[0] || null;
+      }
+       // Se setClause está vazio mas fieldsToUpdate não, há um erro no mapeamento ou na lógica.
+       // Neste ponto, fieldsToUpdate deve conter pelo menos o status se ele foi passado.
+       // Se o status foi passado, setClause não deve estar vazio.
+    }
+
     // Adicionar updated_at automaticamente
     setClause += `"updated_at" = NOW(), `;
 
     setClause = setClause.slice(0, -2); // Remove trailing comma and space
     values.push(id); // Para a cláusula WHERE
-
-    // Se nada além de updated_at foi alterado, não precisa executar o UPDATE
-    if (setClause === '"updated_at" = NOW()') {
-         // Buscar e retornar o evento atualizado para refletir o updated_at
-         return getEventoById(id);
-    }
 
     const query = `
       UPDATE eventos
@@ -171,8 +246,18 @@ export const updateEvento = async (
 export const deleteEvento = async (id: string): Promise<boolean> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('DELETE FROM eventos WHERE id = $1;', [id]);
-    return result.rowCount! > 0; // Retorna true se alguma linha foi excluída
+    // Verificar o status do evento antes de excluir
+    const evento = await getEventoById(id);
+    if (!evento) {
+      return false;
+    }
+
+    if (evento.status !== 'Programado') {
+      throw new Error('Apenas eventos programados podem ser excluídos');
+    }
+
+    const result = await client.query('DELETE FROM eventos WHERE id = $1', [id]);
+    return result.rowCount > 0;
   } finally {
     client.release();
   }

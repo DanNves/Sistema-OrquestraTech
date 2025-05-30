@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, Calendar, MapPin, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar, MapPin, Users, Play, X } from 'lucide-react';
 import { Evento } from '../../server/src/models/evento.model';
+import { useToast } from '@/hooks/use-toast';
 
 const Eventos = () => {
+  const { toast } = useToast();
   // Estados para os dados dos eventos, carregamento e erro
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,27 +62,51 @@ const Eventos = () => {
     
     // Validações antes de enviar
     if (!formData.nome.trim()) {
-      setError('O nome do evento é obrigatório');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "O nome do evento é obrigatório"
+      });
       return;
     }
     if (!formData.tipo) {
-      setError('O tipo do evento é obrigatório');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "O tipo do evento é obrigatório"
+      });
       return;
     }
     if (!formData.data) {
-      setError('A data do evento é obrigatória');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A data do evento é obrigatória"
+      });
       return;
     }
     if (!formData.horaInicio) {
-      setError('A hora de início é obrigatória');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A hora de início é obrigatória"
+      });
       return;
     }
     if (!formData.horaFim) {
-      setError('A hora de término é obrigatória');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A hora de término é obrigatória"
+      });
       return;
     }
     if (!formData.local.trim()) {
-      setError('O local do evento é obrigatório');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "O local do evento é obrigatório"
+      });
       return;
     }
 
@@ -88,7 +114,11 @@ const Eventos = () => {
     const horaInicio = new Date(`2000-01-01T${formData.horaInicio}`);
     const horaFim = new Date(`2000-01-01T${formData.horaFim}`);
     if (horaFim <= horaInicio) {
-      setError('A hora de término deve ser posterior à hora de início');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A hora de término deve ser posterior à hora de início"
+      });
       return;
     }
     
@@ -119,6 +149,7 @@ const Eventos = () => {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
         body: JSON.stringify(dataToSend),
       });
@@ -145,9 +176,19 @@ const Eventos = () => {
       setEditandoId(null);
       setModalAberto(false);
       setError(null);
+
+      // Mostrar mensagem de sucesso
+      toast({
+        title: "Sucesso",
+        description: editandoId ? "Evento atualizado com sucesso!" : "Evento criado com sucesso!"
+      });
     } catch (err: any) {
       console.error('Erro ao salvar evento:', err);
-      setError(`Erro ao salvar evento: ${err.message}`);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: err.message
+      });
     }
   };
 
@@ -159,6 +200,9 @@ const Eventos = () => {
     try {
       const response = await fetch(`http://localhost:3001/api/eventos/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
       });
 
       if (!response.ok) {
@@ -167,9 +211,19 @@ const Eventos = () => {
 
       // Atualizar a lista de eventos
       await fetchEventos();
+
+      // Mostrar mensagem de sucesso
+      toast({
+        title: "Sucesso",
+        description: "Evento excluído com sucesso!"
+      });
     } catch (err) {
       console.error('Erro ao excluir evento:', err);
-      setError('Erro ao excluir evento. Tente novamente mais tarde.');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao excluir evento. Tente novamente mais tarde."
+      });
     }
   };
 
@@ -198,6 +252,178 @@ const Eventos = () => {
     setEditandoId(evento.id);
     setModalAberto(true);
     setError(null); // Limpar erro ao abrir modal
+  };
+
+  // Função para iniciar um evento
+  const handleStartEvent = async (evento: Evento) => {
+    try {
+      console.log('Iniciando evento:', evento);
+      console.log('Token:', localStorage.getItem('authToken'));
+
+      // Não é necessário verificar o evento separadamente antes de atualizar
+      // A requisição PUT para atualização já irá retornar 404 se não existir ou 401 se não autorizado.
+
+      // Agora vamos atualizar o status
+      const response = await fetch(`http://localhost:3001/api/eventos/${evento.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify({
+          // Enviar apenas as propriedades que queremos atualizar
+          status: 'Em Andamento'
+          // Se precisar atualizar outros campos, adicione-os aqui:
+          // nome: evento.nome,
+          // data: evento.data,
+          // ... outros campos permitidos ...
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`Erro ao iniciar evento: ${errorData.message || response.statusText}`);
+      }
+
+      // Configurar timer para concluir o evento
+      try {
+        const dataEvento = new Date(evento.data);
+        const [horas, minutos] = evento.horafim.split(':');
+        
+        console.log('Data original do evento:', evento.data);
+        console.log('Hora de término:', evento.horafim);
+        console.log('Horas e minutos extraídos:', { horas, minutos });
+        
+        dataEvento.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+        
+        const agora = new Date();
+        const tempoParaConcluir = dataEvento.getTime() - agora.getTime();
+
+        console.log('Data do evento após ajuste:', dataEvento);
+        console.log('Data atual:', agora);
+        console.log('Tempo para concluir (ms):', tempoParaConcluir);
+
+        if (tempoParaConcluir > 0) {
+          console.log('Configurando timer para concluir em:', new Date(agora.getTime() + tempoParaConcluir));
+          
+          setTimeout(async () => {
+            try {
+              console.log('Executando conclusão automática do evento:', evento.nome);
+              const response = await fetch(`http://localhost:3001/api/eventos/${evento.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                },
+                body: JSON.stringify({
+                  // Enviar apenas o status para concluir
+                  status: 'Concluído'
+                }),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                throw new Error(`Erro ao concluir evento: ${errorData.message || response.statusText}`);
+              }
+
+              await fetchEventos();
+              toast({
+                title: "Evento Concluído",
+                description: `O evento "${evento.nome}" foi concluído automaticamente.`
+              });
+            } catch (error: any) {
+              console.error('Erro ao concluir evento automaticamente:', error);
+              toast({
+                variant: "destructive",
+                title: "Erro",
+                description: `Erro ao concluir evento automaticamente: ${error.message}`
+              });
+            }
+          }, tempoParaConcluir);
+        } else {
+          console.log('Tempo já passou, concluindo evento imediatamente');
+          const response = await fetch(`http://localhost:3001/api/eventos/${evento.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+            body: JSON.stringify({
+              status: 'Concluído'
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            throw new Error(`Erro ao concluir evento: ${errorData.message || response.statusText}`);
+          }
+
+          await fetchEventos();
+          toast({
+            title: "Evento Concluído",
+            description: `O evento "${evento.nome}" foi concluído.`
+          });
+        }
+      } catch (error: any) {
+        console.error('Erro ao configurar timer:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: `Erro ao configurar timer: ${error.message}`
+        });
+      }
+
+      await fetchEventos();
+      toast({
+        title: "Sucesso",
+        description: "Evento iniciado com sucesso!"
+      });
+    } catch (err: any) {
+      console.error('Erro ao iniciar evento:', err);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Erro ao iniciar evento: ${err.message}`
+      });
+    }
+  };
+
+  // Função para cancelar um evento
+  const handleCancelEvent = async (evento: Evento) => {
+    if (!window.confirm('Tem certeza que deseja cancelar este evento?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/eventos/${evento.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify({
+          ...evento,
+          status: 'Cancelado'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao cancelar evento');
+      }
+
+      await fetchEventos();
+      toast({
+        title: "Sucesso",
+        description: "Evento cancelado com sucesso!"
+      });
+    } catch (err) {
+      console.error('Erro ao cancelar evento:', err);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao cancelar evento. Tente novamente mais tarde."
+      });
+    }
   };
 
   return (
@@ -236,20 +462,73 @@ const Eventos = () => {
                 <CardTitle className="flex justify-between items-start">
                   <span>{evento.nome}</span>
                   <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(evento)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(evento.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {evento.status === 'Programado' && (
+                      <>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(evento)}
+                          title="Editar evento"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(evento.id)}
+                          title="Excluir evento"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleStartEvent(evento)}
+                          className="text-green-600 hover:text-green-700"
+                          title="Iniciar evento"
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                    {evento.status === 'Em Andamento' && (
+                      <>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(evento)}
+                          title="Editar evento"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCancelEvent(evento)}
+                          className="text-red-600 hover:text-red-700"
+                          title="Cancelar evento"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                    {evento.status === 'Concluído' && (
+                      <>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(evento)}
+                          title="Editar evento"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                    {evento.status === 'Cancelado' && (
+                      <span className="text-sm text-gray-500">
+                        Evento cancelado
+                      </span>
+                    )}
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -271,6 +550,7 @@ const Eventos = () => {
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                       evento.status === 'Concluído' ? 'bg-green-100 text-green-800' :
                       evento.status === 'Em Andamento' ? 'bg-yellow-100 text-yellow-800' :
+                      evento.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
                       'bg-blue-100 text-blue-800'
                     }`}>
                       {evento.status}
@@ -376,6 +656,7 @@ const Eventos = () => {
                     <Select
                       value={formData.status}
                       onValueChange={(value) => setFormData({ ...formData, status: value })}
+                      disabled={editandoId !== null} // Desabilitar se estiver editando
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />
@@ -384,6 +665,7 @@ const Eventos = () => {
                         <SelectItem value="Programado">Programado</SelectItem>
                         <SelectItem value="Em Andamento">Em Andamento</SelectItem>
                         <SelectItem value="Concluído">Concluído</SelectItem>
+                        <SelectItem value="Cancelado">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

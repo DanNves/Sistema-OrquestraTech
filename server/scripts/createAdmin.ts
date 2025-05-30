@@ -2,6 +2,7 @@ import { createAdmin } from '../src/services/admin.service';
 import pool from '../src/config/db';
 import dotenv from 'dotenv';
 import { Admin } from '../src/models/admin.model';
+import { AdminCargo } from '../models/admin.model';
 
 dotenv.config();
 
@@ -11,8 +12,9 @@ const runScript = async () => {
   const adminData: Omit<Admin, 'id' | 'created_at' | 'updated_at' | 'password_hash'> & { password: string } = {
     nome: 'Daniel', // <-- Substituído pelo nome fornecido
     email: 'nevesdanniel021@hotmail.com', // <-- SUBSTITUÍDO PELO EMAIL FORNECIDO
-    cargo: 'SuperAdmin', // Definir como SuperAdmin
+    cargo: AdminCargo.SuperAdmin, // Usar o enum AdminCargo
     permissoes: ['gerenciar_usuarios', 'gerenciar_eventos', 'gerenciar_equipes', 'gerenciar_avaliacoes'], // Exemplo de permissões
+    password: 'Jesus@2110' // Adicionar a senha aqui TEMPORARIAMENTE
   };
 
   // Como a senha foi removida do objeto adminData acima,

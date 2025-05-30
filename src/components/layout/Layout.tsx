@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import { Toaster } from '@/components/ui/toaster';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -85,6 +85,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {children}
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 };

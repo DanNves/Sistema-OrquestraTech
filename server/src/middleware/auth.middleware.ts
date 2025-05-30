@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_default_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'seu_segredo_jwt_padrao';
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
   let token;

@@ -185,7 +185,7 @@ export const createEventosTable = async () => {
         horaInicio TIME NOT NULL,
         horaFim TIME NOT NULL,
         tipo TEXT CHECK (tipo IN ('Ensaio de Seção', 'Ensaio Geral', 'Encontro Técnico')),
-        status TEXT CHECK (status IN ('Programado', 'Concluído', 'Cancelado')),
+        status TEXT CHECK (status IN ('Programado', 'Em Andamento', 'Concluído', 'Cancelado')),
         participantes TEXT[],
         mediaPontuacao REAL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
