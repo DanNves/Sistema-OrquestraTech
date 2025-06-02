@@ -50,7 +50,7 @@ export const getAllAlertasIA = async (filters: {
     if (conditions.length > 0) {
       query += ' WHERE ' + conditions.join(' AND ');
     }
-    query += ' ORDER BY created_at DESC;'; // Default ordering
+    query += ' ORDER BY created_at DESC;';
 
     const result = await client.query(query, values);
     return result.rows;
@@ -74,12 +74,10 @@ export const markAlertaAsRead = async (id: string): Promise<AlertaIA | null> => 
   try {
     const query = `
       UPDATE alertas_ia
-      SET read = true, created_at = CURRENT_TIMESTAMP -- Assuming 'created_at' should be 'updated_at' conceptually
+      SET read = true, created_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *;
     `;
-    // If there's an 'updated_at' field, it should be updated instead of 'created_at'
-    // For now, following the schema which only has 'created_at'
     const result = await client.query(query, [id]);
     return result.rows[0] || null;
   } finally {
@@ -91,7 +89,20 @@ export const deleteAlertaIA = async (id: string): Promise<boolean> => {
   const client = await pool.connect();
   try {
     const result = await client.query('DELETE FROM alertas_ia WHERE id = $1;', [id]);
-    return result.rowCount > 0;
+    return result.rowCount! > 0;
+  } finally {
+    client.release();
+  }
+};
+
+export const limparAlertasTeste = async (): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    await client.query('DELETE FROM alertas_ia;');
+    console.log('Todos os alertas foram removidos com sucesso.');
+  } catch (error) {
+    console.error('Erro ao limpar alertas:', error);
+    throw error;
   } finally {
     client.release();
   }

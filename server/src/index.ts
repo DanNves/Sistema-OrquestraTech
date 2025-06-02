@@ -10,6 +10,7 @@ import { baseAvaliacaoRouter, eventoAvaliacaoRouter } from './routes/avaliacao.r
 import adminRoutes from './routes/admin.routes';
 import alertaIARoutes from './routes/alertaIA.routes';
 import authRoutes from './routes/auth.routes';
+import iaRoutes from './routes/ia.routes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
@@ -32,13 +33,13 @@ app.use('/api/eventos/:eventoId/avaliacoes', eventoAvaliacaoRouter); // For /api
 app.use('/api/admins', adminRoutes);
 app.use('/api/alertas-ia', alertaIARoutes);
 app.use('/api/auth', authRoutes);
-
+app.use('/api/ia', iaRoutes);
 
 // Start server
 const server = app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   await testConnection();
-  await createEventosTable();
+  // await createEventosTable(); // Comentado temporariamente para evitar erro de duplicidade na inicialização
   await createUsuariosTable();
   await createEquipesTable();
   await createInscricoesTable();

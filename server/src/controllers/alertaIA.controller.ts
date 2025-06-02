@@ -88,3 +88,53 @@ export const deleteAlertaIA = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting alertaIA', error: (error as Error).message });
   }
 };
+
+export const gerarAlertasTeste = async (req: Request, res: Response) => {
+  try {
+    const alertasTeste = [
+      {
+        tipo: 'Ausência',
+        mensagem: 'Equipe XYZ não compareceu ao último evento',
+        data: new Date(),
+        eventoRelacionadoId: null
+      },
+      {
+        tipo: 'Baixa Pontuação',
+        mensagem: 'Equipe ABC teve pontuação abaixo da média no último evento',
+        data: new Date(),
+        eventoRelacionadoId: null
+      },
+      {
+        tipo: 'Inscrição Baixa',
+        mensagem: 'Evento de Robótica tem poucas inscrições',
+        data: new Date(),
+        eventoRelacionadoId: null
+      },
+      {
+        tipo: 'Sugestão',
+        mensagem: 'Considere realizar mais eventos de programação',
+        data: new Date(),
+        eventoRelacionadoId: null
+      }
+    ];
+
+    const alertasCriados = await Promise.all(
+      alertasTeste.map(alerta => alertaIAService.createAlertaIA(alerta))
+    );
+
+    res.status(201).json(alertasCriados);
+  } catch (error) {
+    console.error('Error generating test alerts:', error);
+    res.status(500).json({ message: 'Error generating test alerts', error: (error as Error).message });
+  }
+};
+
+export const limparAlertas = async (req: Request, res: Response) => {
+  try {
+    await alertaIAService.limparAlertasTeste();
+    res.status(200).json({ message: 'Todos os alertas foram removidos com sucesso' });
+  } catch (error) {
+    console.error('Error clearing alerts:', error);
+    res.status(500).json({ message: 'Error clearing alerts', error: (error as Error).message });
+  }
+};

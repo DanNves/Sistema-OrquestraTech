@@ -42,7 +42,7 @@ export const createEvento = async (
   }
 
   const id = uuidv4();
-  
+
   const client = await pool.connect();
   try {
     // Verificar se já existe um evento com o mesmo nome na mesma data e hora
@@ -62,7 +62,7 @@ export const createEvento = async (
 
     const query = `
       INSERT INTO eventos (
-        id, nome, data, descricao, local, equipesParticipantes,
+        id, nome, data, descricao, local, equipesParticipantes, 
         titulo, horaInicio, horaFim, tipo, status, participantes
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -184,7 +184,7 @@ export const updateEvento = async (
       participantes: 'participantes' // Corrigido para lowercase
       // mediaPontuacao não está incluído aqui pois é calculado
     };
-
+    
     let setClause = '';
     const values = [];
     let valueCount = 1;
@@ -196,10 +196,10 @@ export const updateEvento = async (
             // A verificação de undefined já foi feita ao construir fieldsToUpdate
             if (dbColumnName) {
                 setClause += `"${dbColumnName}" = $${valueCount}, `;
-                values.push(fieldsToUpdate[key as keyof typeof fieldsToUpdate]);
-                valueCount++;
-            }
+            values.push(fieldsToUpdate[key as keyof typeof fieldsToUpdate]);
+            valueCount++;
         }
+    }
     }
 
     // Se não há campos para atualizar (exceto updated_at, que é adicionado a seguir),
@@ -224,7 +224,7 @@ export const updateEvento = async (
 
     setClause = setClause.slice(0, -2); // Remove trailing comma and space
     values.push(id); // Para a cláusula WHERE
-
+    
     const query = `
       UPDATE eventos
       SET ${setClause}
@@ -252,9 +252,10 @@ export const deleteEvento = async (id: string): Promise<boolean> => {
       return false;
     }
 
-    if (evento.status !== 'Programado') {
-      throw new Error('Apenas eventos programados podem ser excluídos');
-    }
+    // Removida a validação de status para permitir exclusão em qualquer estado
+    // if (evento.status !== 'Programado') {
+    //   throw new Error('Apenas eventos programados podem ser excluídos');
+    // }
 
     const result = await client.query('DELETE FROM eventos WHERE id = $1', [id]);
     return result.rowCount > 0;

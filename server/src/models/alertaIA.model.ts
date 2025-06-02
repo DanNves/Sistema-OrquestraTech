@@ -1,9 +1,9 @@
 export interface AlertaIA {
   id: string;
-  eventoId: string; // ID of the Evento related to the alert
+  tipo: 'Ausência' | 'Baixa Pontuação' | 'Inscrição Baixa' | 'Sugestão';
   mensagem: string;
-  tipo: 'info' | 'aviso' | 'erro'; // Example types of alerts
-  dataCriacao: Date;
-  resolvido: boolean;
-  // Adicionar outros campos relevantes conforme necessário
+  data: Date;
+  eventoRelacionadoId?: string;
+  read: boolean;
+  created_at: Date;
 }
