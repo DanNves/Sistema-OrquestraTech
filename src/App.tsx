@@ -17,6 +17,7 @@ import RelatorioUsuarios from './pages/RelatorioUsuarios';
 import RelatorioEventos from './pages/RelatorioEventos';
 import RelatorioEquipes from './pages/RelatorioEquipes';
 import RelatorioInscricoes from './pages/RelatorioInscricoes';
+import Alertas from './pages/Alertas';
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
         <Route path="/eventos" element={<Eventos />} />
         <Route path="/questionarios" element={<Questionarios />} />
         <Route path="/usuarios" element={<Usuarios />} />
+        <Route path="/alertas" element={<Alertas />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
         <Route path="/relatorios/usuarios" element={<RelatorioUsuarios />} />
         <Route path="/relatorios/eventos" element={<RelatorioEventos />} />

@@ -33,6 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { title: 'Eventos', icon: <i className="fas fa-calendar-alt text-purple-600"></i>, path: '/eventos', notificationCount: 0 },
     { title: 'Questionários', icon: <i className="fas fa-clipboard-question text-orange-500"></i>, path: '/questionarios', notificationCount: 0 },
     { title: 'Usuários', icon: <i className="fas fa-user text-blue-600"></i>, path: '/usuarios', notificationCount: 3 },
+    { title: 'Alertas', icon: <i className="fas fa-bell text-red-600"></i>, path: '/alertas', notificationCount: 0 },
     { title: 'Configurações', icon: <i className="fas fa-cog text-gray-600"></i>, path: '/configuracoes', notificationCount: 0 },
   ];
 

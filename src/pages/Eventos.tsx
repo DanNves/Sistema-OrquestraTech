@@ -48,7 +48,12 @@ const Eventos = () => {
       }
       
       const data = await response.json();
-      setEventos(data);
+      // Filtrar eventos concluídos ou cancelados
+      // const eventosFiltrados = data.filter((evento: Evento) => 
+      //   evento.status === 'Programado' || evento.status === 'Em Andamento'
+      // );
+      // setEventos(eventosFiltrados);
+      setEventos(data); // Carregar todos os eventos
     } catch (err) {
       console.error('Erro ao buscar eventos:', err);
       setError('Erro ao carregar eventos. Tente novamente mais tarde.');
@@ -192,37 +197,50 @@ const Eventos = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Tem certeza que deseja excluir este evento?')) {
+  const handleDelete = async (evento: Evento) => {
+    // Verificar o status antes de excluir - REMOVIDO TEMPORARIAMENTE PARA PERMITIR EXCLUSÃO PARA TESTE
+    // if (evento.status !== 'Concluído' && evento.status !== 'Cancelado') {
+    //     toast({
+    //         variant: "destructive",
+    //         title: "Ação Não Permitida",
+    //         description: "Apenas eventos com status 'Concluído' ou 'Cancelado' podem ser excluídos."
+    //     });
+    //     return; // Interrompe a exclusão se o status não permitir
+    // }
+
+    if (!window.confirm(`Tem certeza que deseja excluir o evento "${evento.nome}"?`)) {
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/eventos/${id}`, {
+      // Chamar a rota DELETE /api/eventos/:id
+      // Assumindo que o backend DELETE /api/eventos/:id não precisa de corpo na requisição
+      const response = await fetch(`http://localhost:3001/api/eventos/${evento.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+           'Authorization': `Bearer ${localStorage.getItem('authToken')}`, // Manter autenticação para rota protegida
         },
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao excluir evento');
+        const errorResponse = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`Erro ao excluir evento: ${errorResponse.message}`);
       }
 
-      // Atualizar a lista de eventos
-      await fetchEventos();
+      // Atualizar a lista de eventos removendo o evento excluído localmente
+      setEventos(eventos.filter(e => e.id !== evento.id));
 
       // Mostrar mensagem de sucesso
       toast({
         title: "Sucesso",
         description: "Evento excluído com sucesso!"
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao excluir evento:', err);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao excluir evento. Tente novamente mais tarde."
+        description: err.message
       });
     }
   };
@@ -402,13 +420,13 @@ const Eventos = () => {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
         body: JSON.stringify({
-          ...evento,
           status: 'Cancelado'
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao cancelar evento');
+        const errorResponse = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`Erro ao cancelar evento: ${errorResponse.message || response.statusText}`);
       }
 
       await fetchEventos();
@@ -462,9 +480,10 @@ const Eventos = () => {
                 <CardTitle className="flex justify-between items-start">
                   <span>{evento.nome}</span>
                   <div className="flex gap-2">
+                    {/* Botões para status Programado */}
                     {evento.status === 'Programado' && (
                       <>
-                        <Button 
+                        <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(evento)}
@@ -472,63 +491,54 @@ const Eventos = () => {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button 
+                         {/* Botão Iniciar para status Programado */}
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleStartEvent(evento)}
+                           className="text-green-600 hover:text-green-700"
+                           title="Iniciar evento"
+                         >
+                           <Play className="w-4 h-4" />
+                         </Button>
+                         {/* Botão Cancelar para status Programado */}
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleCancelEvent(evento)}
+                           title="Cancelar evento"
+                         >
+                           <X className="w-4 h-4" /> {/* Ícone de X para cancelar */}
+                         </Button>
+                      </>
+                    )}
+
+                     {/* Botões para status Em Andamento */}
+                     {evento.status === 'Em Andamento' && (
+                       <>
+                         {/* Botão Cancelar para status Em Andamento */}
+                          <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleCancelEvent(evento)}
+                           title="Cancelar evento"
+                         >
+                           <X className="w-4 h-4" /> {/* Ícone de X para cancelar */}
+                         </Button>
+                       </>
+                     )}
+
+                     {/* Botão Excluir - Visível apenas para Concluído ou Cancelado */}
+                     {(evento.status === 'Concluído' || evento.status === 'Cancelado') && (
+                        <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(evento.id)}
+                          onClick={() => handleDelete(evento)}
                           title="Excluir evento"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleStartEvent(evento)}
-                          className="text-green-600 hover:text-green-700"
-                          title="Iniciar evento"
-                        >
-                          <Play className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    {evento.status === 'Em Andamento' && (
-                      <>
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(evento)}
-                          title="Editar evento"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCancelEvent(evento)}
-                          className="text-red-600 hover:text-red-700"
-                          title="Cancelar evento"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    {evento.status === 'Concluído' && (
-                      <>
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(evento)}
-                          title="Editar evento"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    {evento.status === 'Cancelado' && (
-                      <span className="text-sm text-gray-500">
-                        Evento cancelado
-                      </span>
-                    )}
+                      )}
                   </div>
                 </CardTitle>
               </CardHeader>

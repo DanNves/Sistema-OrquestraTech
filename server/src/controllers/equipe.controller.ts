@@ -3,11 +3,11 @@ import * as equipeService from '../services/equipe.service';
 
 export const createEquipe = async (req: Request, res: Response) => {
   try {
-    const { nome } = req.body;
+    const { nome, responsavel } = req.body;
     if (!nome) {
       return res.status(400).json({ message: 'Missing required field: nome' });
     }
-    const newEquipe = await equipeService.createEquipe({ nome }); // Pass only nome
+    const newEquipe = await equipeService.createEquipe({ nome, responsavel });
     res.status(201).json(newEquipe);
   } catch (error) {
     console.error('Error creating equipe:', error);

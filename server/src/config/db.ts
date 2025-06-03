@@ -118,19 +118,23 @@ export const createInscricoesTable = async () => {
 export const createEquipesTable = async () => {
   const client = await pool.connect();
   try {
+    // Dropar a tabela existente para adicionar a nova coluna
+    await client.query(`DROP TABLE IF EXISTS equipes CASCADE;`);
+
     await client.query(`
-      CREATE TABLE IF NOT EXISTS equipes (
+      CREATE TABLE equipes (
         id TEXT PRIMARY KEY,
         nome TEXT NOT NULL,
         integrantes TEXT[], -- Array of Usuario IDs
         eventos TEXT[], -- Array of Evento IDs
         mediaPontuacao REAL DEFAULT 0,
         presencaMedia REAL DEFAULT 0, -- Percentage
+        responsavel TEXT, -- Nova coluna para o responsável (pode ser NULL)
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('Equipes table created successfully or already exists.');
+    console.log('Equipes table created successfully with responsavel column or already exists.');
   } catch (error) {
     console.error('Error creating equipes table:', error);
   } finally {

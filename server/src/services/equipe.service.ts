@@ -3,13 +3,14 @@ import pool from '../config/db';
 import { Equipe } from '../models/equipe.model';
 
 export const createEquipe = async (
-  equipeData: Omit<Equipe, 'id' | 'mediaPontuacao' | 'presencaMedia' | 'eventos' | 'integrantes'> & { nome: string }
+  equipeData: Omit<Equipe, 'id' | 'mediaPontuacao' | 'presencaMedia' | 'eventos' | 'integrantes'> & { nome: string; responsavel?: string }
 ): Promise<Equipe> => {
-  const { nome } = equipeData;
+  const { nome, responsavel } = equipeData;
   const id = uuidv4();
   const newEquipe: Equipe = {
     id,
     nome,
+    responsavel: responsavel || null, // Use null if responsavel is undefined
     integrantes: [], // Default empty array
     eventos: [], // Default empty array
     mediaPontuacao: 0, // Default value
@@ -20,13 +21,14 @@ export const createEquipe = async (
   const client = await pool.connect();
   try {
     const query = `
-      INSERT INTO equipes (id, nome, integrantes, eventos, mediaPontuacao, presencaMedia)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO equipes (id, nome, responsavel, integrantes, eventos, mediaPontuacao, presencaMedia)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *;
     `;
     const values = [
       newEquipe.id,
       newEquipe.nome,
+      newEquipe.responsavel,
       newEquipe.integrantes,
       newEquipe.eventos,
       newEquipe.mediaPontuacao,
@@ -73,7 +75,7 @@ export const updateEquipe = async (
     const fieldsToUpdate = { ...existingEquipe, ...equipeData, updated_at: new Date() };
     
     const allowedFields = [
-        'nome', 'integrantes', 'eventos', 'mediaPontuacao', 
+        'nome', 'responsavel', 'integrantes', 'eventos', 'mediaPontuacao', 
         'presencaMedia', 'updated_at'
     ];
     
