@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
+# 🎼 Sistema OrquestraTech
 
-## Project info
+**OrquestraTech** é um sistema inovador de gerenciamento de orquestras, desenvolvido com foco em **escalabilidade**, **modularidade** e **experiência do usuário**. Utilizando tecnologias modernas como **TypeScript**, **Vite**, **Tailwind CSS** e **Bun**, o projeto adota princípios sólidos de arquitetura de software para garantir um código limpo, reutilizável e de fácil manutenção.
 
-**URL**: https://lovable.dev/projects/6b901880-3d8c-48af-92fd-02e0355cf128
+![License](https://img.shields.io/github/license/DanNves/Sistema-OrquestraTech)
+![Stack](https://img.shields.io/badge/stack-Vite%20%7C%20Tailwind%20%7C%20Bun-blue)
 
-## How can I edit this code?
+URL do Projeto - https://lovable.dev/projects/6b901880-3d8c-48af-92fd-02e0355cf128
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🚀 Tecnologias Utilizadas
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6b901880-3d8c-48af-92fd-02e0355cf128) and start prompting.
+- **Frontend**: [Vite](https://vitejs.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Tailwind CSS](https://tailwindcss.com/)
+- **Backend**: [Bun](https://bun.sh/) + [Node.js](https://nodejs.org/)
+- **Arquitetura**: Princípios SOLID, Clean Code, separação clara entre camadas (`src/`, `server/`, `public/`)
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🎯 Objetivos do Projeto
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- 🎻 **Gerenciamento de Orquestras**: Cadastro e organização de músicos, instrumentos e repertórios.  
+- 🏗️ **Escalabilidade**: Arquitetura modular que facilita expansão e manutenção.  
+- 🧩 **Experiência do Usuário**: Interface moderna, responsiva e intuitiva.  
+- ⚡ **Desempenho**: Utilização de ferramentas modernas para garantir performance.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 📁 Estrutura do Projeto
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Sistema-OrquestraTech/
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+├── src/ # Código-fonte principal (componentes, páginas, lógica de negócios)
 
-# Step 3: Install the necessary dependencies.
-npm i
+├── server/ # Lógica de backend e APIs
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+├── public/ # Arquivos estáticos e assets
 
-**Edit a file directly in GitHub**
+├── components.json # Registro de componentes reutilizáveis
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+├── tailwind.config.ts # Configuração do Tailwind CSS
 
-**Use GitHub Codespaces**
+├── vite.config.ts # Configuração do Vite
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+├── tsconfig*.json # Configurações do TypeScript
 
-## What technologies are used for this project?
+└── README.md # Documentação do projeto
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🧠 Práticas de Desenvolvimento
 
-Simply open [Lovable](https://lovable.dev/projects/6b901880-3d8c-48af-92fd-02e0355cf128) and click on Share -> Publish.
+- ✅ **Clean Code**: Código limpo, organizado e reutilizável  
+- ✅ **Princípios SOLID**: Estrutura robusta e de fácil manutenção  
+- ✅ **Git e Versionamento**: Colaboração facilitada com histórico claro  
+- ✅ **Automação com Bun**: Scripts rápidos para build e desenvolvimento
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 📦 Como Executar o Projeto
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+# 1. Clone o repositório
+git clone https://github.com/DanNves/Sistema-OrquestraTech.git
+cd Sistema-OrquestraTech
+
+# 2. Instale as dependências
+bun install
+
+# 3. Inicie o servidor de desenvolvimento
+bun run dev
+
+# 4. 4. Acesse no navegador
+http://localhost:3000
+
+## 🛠️ Contribuindo
+
+Contribuições são muito bem-vindas! Para colaborar com o projeto:
+
+```bash
+# Faça um fork do repositório
+
+# Clone o fork para sua máquina
+git clone https://github.com/seu-usuario/Sistema-OrquestraTech.git
+
+# Crie uma branch para sua feature ou correção
+git checkout -b minha-feature
+
+# Faça alterações e commits claros
+git commit -m "feat: nova funcionalidade implementada"
+
+# Suba a branch para o seu repositório remoto
+git push origin minha-feature
