@@ -3,26 +3,34 @@ import pool from '../config/db';
 import { Equipe } from '../models/equipe.model';
 
 export const createEquipe = async (
-  equipeData: Omit<Equipe, 'id' | 'mediaPontuacao' | 'presencaMedia' | 'eventos' | 'integrantes'> & { nome: string; responsavel?: string }
+  equipeData: Omit<Equipe, 'id' | 'mediaPontuacao' | 'presencaMedia' | 'eventos' | 'integrantes'> & { nome: string; responsavel?: string; maxmembros?: number; }
 ): Promise<Equipe> => {
-  const { nome, responsavel } = equipeData;
+  console.log('[%s] [equipeService.createEquipe] Dados recebidos para criação:', new Date().toISOString(), equipeData);
+  const { nome, responsavel, maxmembros } = equipeData;
+  console.log('[%s] [equipeService.createEquipe] maxmembros desestruturado:', new Date().toISOString(), maxmembros);
   const id = uuidv4();
+
+  // Garantir que maxmembros seja um número inteiro, padrão 0 se não fornecido ou inválido
+  const maxMembrosInt = typeof maxmembros === 'number' && !isNaN(maxmembros) ? Math.floor(maxmembros) : 0;
+  console.log('[%s] [equipeService.createEquipe] maxMembrosInt calculado:', new Date().toISOString(), maxMembrosInt);
+
   const newEquipe: Equipe = {
     id,
     nome,
-    responsavel: responsavel || null, // Use null if responsavel is undefined
-    integrantes: [], // Default empty array
-    eventos: [], // Default empty array
-    mediaPontuacao: 0, // Default value
-    presencaMedia: 0, // Default value
-    // created_at and updated_at will be handled by the database
+    responsavel: responsavel || null,
+    integrantes: responsavel ? [responsavel] : [],
+    eventos: [],
+    mediaPontuacao: 0,
+    presencaMedia: 0,
+    maxmembros: maxMembrosInt,
   };
+  console.log('[%s] [equipeService.createEquipe] Objeto newEquipe antes da inserção:', new Date().toISOString(), newEquipe);
 
   const client = await pool.connect();
   try {
     const query = `
-      INSERT INTO equipes (id, nome, responsavel, integrantes, eventos, mediaPontuacao, presencaMedia)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO equipes (id, nome, responsavel, integrantes, eventos, mediaPontuacao, presencaMedia, maxmembros)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *;
     `;
     const values = [
@@ -33,8 +41,12 @@ export const createEquipe = async (
       newEquipe.eventos,
       newEquipe.mediaPontuacao,
       newEquipe.presencaMedia,
+      newEquipe.maxmembros,
     ];
+    console.log('[%s] [equipeService.createEquipe] Query de INSERT:', new Date().toISOString(), query);
+    console.log('[%s] [equipeService.createEquipe] Valores para INSERT:', new Date().toISOString(), values);
     const result = await client.query(query, values);
+    console.log('[%s] [equipeService.createEquipe] Resultado da inserção:', new Date().toISOString(), result.rows[0]);
     return result.rows[0];
   } finally {
     client.release();
@@ -54,7 +66,10 @@ export const getAllEquipes = async (): Promise<Equipe[]> => {
 export const getEquipeById = async (id: string): Promise<Equipe | null> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM equipes WHERE id = $1;', [id]);
+    const result = await client.query('SELECT id, nome, responsavel, integrantes, eventos, mediaPontuacao, presencaMedia, maxmembros, created_at, updated_at FROM equipes WHERE id = $1;', [id]);
+    
+    console.log('[%s] [equipeService.getEquipeById] Resultado da query para ID %s:', new Date().toISOString(), id, result.rows[0]);
+
     return result.rows[0] || null;
   } finally {
     client.release();
@@ -67,44 +82,65 @@ export const updateEquipe = async (
 ): Promise<Equipe | null> => {
   const client = await pool.connect();
   try {
+    console.log('[%s] [equipeService.updateEquipe] Recebido ID da equipe:', new Date().toISOString(), id);
+    console.log('[%s] [equipeService.updateEquipe] Dados da equipeData recebidos para atualização:', new Date().toISOString(), equipeData);
+
     const existingEquipe = await getEquipeById(id);
     if (!existingEquipe) {
       return null;
     }
 
-    const fieldsToUpdate = { ...existingEquipe, ...equipeData, updated_at: new Date() };
-    
-    const allowedFields = [
-        'nome', 'responsavel', 'integrantes', 'eventos', 'mediaPontuacao', 
-        'presencaMedia', 'updated_at'
-    ];
-    
-    let setClause = '';
+    const fieldsToUpdate: Partial<Equipe> = { updated_at: new Date() };
     const values = [];
     let valueCount = 1;
+    let setClause = '';
 
-    for (const key in fieldsToUpdate) {
-        if (fieldsToUpdate.hasOwnProperty(key) && allowedFields.includes(key) && key !== 'id') {
+    const allowedFields = [
+        'nome', 'responsavel', 'integrantes', 'eventos', 'mediaPontuacao', 
+        'presencaMedia', 'maxmembros'
+    ];
+
+    for (const key of allowedFields) {
+        if (equipeData.hasOwnProperty(key) && key !== 'id') {
+            let value = (equipeData as any)[key];
+
+            if (key === 'maxmembros') {
+                if (typeof value === 'number' && !isNaN(value)) {
+                    value = Math.floor(value);
+                    console.log('[%s] [equipeService.updateEquipe] maxmembros ajustado para:', new Date().toISOString(), value);
+                } else {
+                    value = 0;
+                    console.log('[%s] [equipeService.updateEquipe] maxmembros inválido, ajustado para:', new Date().toISOString(), value);
+                }
+            }
+
             setClause += `${key} = $${valueCount}, `;
-            values.push(fieldsToUpdate[key as keyof typeof fieldsToUpdate]);
+            values.push(value);
             valueCount++;
         }
     }
 
-    setClause = setClause.slice(0, -2);
-    values.push(id);
-
-    if (setClause === '') {
-        return existingEquipe;
+    if (setClause !== '') {
+        setClause = setClause.slice(0, -2) + ', updated_at = CURRENT_TIMESTAMP';
+    } else {
+        setClause = 'updated_at = CURRENT_TIMESTAMP';
     }
     
+    values.push(id);
+
     const query = `
       UPDATE equipes
       SET ${setClause}
       WHERE id = $${valueCount}
       RETURNING *;
     `;
+
+    console.log('[%s] [equipeService.updateEquipe] Query de atualização:', new Date().toISOString(), query);
+    console.log('[%s] [equipeService.updateEquipe] Valores para atualização:', new Date().toISOString(), values);
+
     const result = await client.query(query, values);
+    console.log('[%s] [equipeService.updateEquipe] Resultado da atualização:', new Date().toISOString(), result.rows[0]);
+
     return result.rows[0] || null;
   } finally {
     client.release();
@@ -126,14 +162,25 @@ export const deleteEquipe = async (id: string): Promise<boolean> => {
 export const addIntegranteToEquipe = async (equipeId: string, usuarioId: string): Promise<Equipe | null> => {
   const client = await pool.connect();
   try {
-    // First, check if usuarioId already exists in integrantes to prevent duplicates
-    const equipeResult = await client.query('SELECT integrantes FROM equipes WHERE id = $1;', [equipeId]);
+    const equipeResult = await client.query('SELECT integrantes, maxmembros, responsavel FROM equipes WHERE id = $1;', [equipeId]);
     if (equipeResult.rows.length === 0) {
-      return null; // Equipe not found
+      return null;
     }
-    const integrantes = equipeResult.rows[0].integrantes || [];
+
+    const equipe = equipeResult.rows[0];
+    const integrantes = equipe.integrantes || [];
+    const maxmembros = equipe.maxmembros || 0;
+
     if (integrantes.includes(usuarioId)) {
-      return equipeResult.rows[0]; // Usuario already in equipe, return current equipe
+      return equipeResult.rows[0];
+    }
+
+    if (maxmembros > 0 && integrantes.length >= maxmembros) {
+      throw new Error(`A equipe já atingiu o limite máximo de ${maxmembros} membros`);
+    }
+
+    if (usuarioId === equipe.responsavel) {
+      return equipeResult.rows[0];
     }
 
     const query = `

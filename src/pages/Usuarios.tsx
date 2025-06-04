@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { 
@@ -61,74 +61,26 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
+import axios from 'axios';
 
 // Define the allowed status types
 type UserStatus = 'active' | 'inactive' | 'pending';
 
-// Mock user data with correct typing
-const initialUsers = [
-  {
-    id: 1,
-    name: 'Ana Silva',
-    email: 'ana.silva@email.com',
-    role: 'Administrador',
-    status: 'active' as UserStatus,
-    team: 'Coral',
-    lastAccess: '2023-05-18T15:30:22',
-    avatar: null,
-  },
-  {
-    id: 2,
-    name: 'Pedro Santos',
-    email: 'pedro.santos@email.com',
-    role: 'Músico',
-    status: 'active' as UserStatus,
-    team: 'Banda',
-    lastAccess: '2023-05-17T09:15:45',
-    avatar: null,
-  },
-  {
-    id: 3,
-    name: 'Mariana Costa',
-    email: 'mariana.costa@email.com',
-    role: 'Líder',
-    status: 'inactive' as UserStatus,
-    team: 'Coral',
-    lastAccess: '2023-05-10T18:22:30',
-    avatar: null,
-  },
-  {
-    id: 4,
-    name: 'João Oliveira',
-    email: 'joao.oliveira@email.com',
-    role: 'Músico',
-    status: 'pending' as UserStatus,
-    team: 'Banda',
-    lastAccess: '2023-05-15T11:45:12',
-    avatar: null,
-  },
-  {
-    id: 5,
-    name: 'Larissa Mendes',
-    email: 'larissa.mendes@email.com',
-    role: 'Técnico',
-    status: 'active' as UserStatus,
-    team: 'Técnica',
-    lastAccess: '2023-05-18T08:30:00',
-    avatar: null,
-  },
-  {
-    id: 6,
-    name: 'Rodrigo Lima',
-    email: 'rodrigo.lima@email.com',
-    role: 'Músico',
-    status: 'inactive' as UserStatus,
-    team: 'Banda',
-    lastAccess: '2023-05-01T14:20:15',
-    avatar: null,
-  },
-];
+// REMOVER dados mockados
+// const initialUsers = [
+//   {
+//     id: 1,
+//     name: 'Ana Silva',
+//     email: 'ana.silva@email.com',
+//     role: 'Administrador',
+//     status: 'active' as UserStatus,
+//     team: 'Coral',
+//     lastAccess: '2023-05-18T15:30:22',
+//     avatar: null,
+//   },
+//   // ... outros usuários mockados
+// ];
 
 type User = {
   id: number;
@@ -139,6 +91,8 @@ type User = {
   team: string;
   lastAccess: string;
   avatar: string | null;
+  equipeId?: string; // Mantido para compatibilidade com o backend, mas não usado no form
+  tipo?: string; // Adicionar tipo opcionalmente caso o backend ainda retorne assim
 }
 
 type UserFormData = {
@@ -148,11 +102,23 @@ type UserFormData = {
   role: string;
   status: UserStatus;
   team: string;
+  password?: string; // Adicionar campo de senha (opcional, usado na criação/edição)
+  confirmPassword?: string; // Adicionar campo de confirmação de senha (opcional, usado na criação)
 }
 
 const Usuarios = () => {
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(initialUsers);
+  const { toast } = useToast();
+  // Estados para os dados dos usuários
+  const [users, setUsers] = useState<User[]>([]); // Começar com array vazio
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]); // Começar com array vazio
+  // Estados para loading e erro da busca de usuários
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Adicionar estado para loading/erro na submissão do formulário (criar/editar)
+  const [submittingUser, setSubmittingUser] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
@@ -166,10 +132,37 @@ const Usuarios = () => {
     email: '',
     role: 'Músico',
     status: 'active',
-    team: ''
+    team: '',
+    password: '', // Inicializar campos de senha
+    confirmPassword: '',
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState('todos');
+
+  // Hook para buscar usuários do backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const response = await axios.get<User[]>('http://localhost:3001/api/usuarios');
+        console.log("Usuários recebidos do backend:", response.data); // LOG temporário
+        // Mapear o campo 'ativo' (boolean) do backend para 'status' (UserStatus) do frontend
+        const mappedUsers = response.data.map(user => ({
+           ...user,
+           status: user.ativo === false ? 'inactive' : (user.status || 'active') // Mapear ativo=false para 'inactive', manter status existente (para 'pending') ou default 'active'
+        }));
+        setUsers(mappedUsers);
+        setFilteredUsers(applyFilters(mappedUsers, searchQuery, statusFilter)); // Aplicar filtros iniciais na lista mapeada
+      } catch (err) {
+        console.error('Erro ao buscar usuários:', err);
+        setUsersError('Não foi possível carregar os usuários.');
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []); // Dependências: array vazio para executar apenas uma vez
 
   // Handler functions
   const handleAddUser = () => {
@@ -179,22 +172,52 @@ const Usuarios = () => {
       email: '',
       role: 'Músico',
       status: 'active',
-      team: ''
+      team: '',
+      password: '', // Inicializar campos de senha
+      confirmPassword: '',
     });
+    // Resetar erros de submissão
+    setSubmitError(null);
     setIsAddUserOpen(true);
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = async (user: User) => { // Tornar assíncrona para buscar dados
     setIsEditMode(true);
-    setCurrentUser({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      team: user.team
-    });
-    setIsAddUserOpen(true);
+    setSubmittingUser(true); // Indicar loading enquanto busca dados
+    setSubmitError(null); // Resetar erros de submissão
+
+    try {
+      // Buscar dados completos do usuário do backend
+      const response = await axios.get<User>(`http://localhost:3001/api/usuarios/${user.id}`);
+      const userData = response.data;
+
+      setCurrentUser({
+        id: userData.id, // Usar ID retornado pelo backend
+        name: userData.nome, // Mapear nome do backend para name do frontend
+        email: userData.email,
+        role: userData.tipo || '', // Mapear tipo do backend para role do frontend, usar string vazia se null
+        status: userData.status, // Incluir status na edição
+        team: userData.equipeId || '', // Mapear equipeId do backend para team do frontend, usar string vazia se null
+        password: '', // Manter campos de senha vazios na edição por padrão
+        confirmPassword: '',
+      });
+      setIsAddUserOpen(true);
+
+    } catch (error: any) {
+      console.error('Erro ao buscar usuário para edição:', error);
+      const errorMessage = error.response?.data?.message || error.message;
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dados do usuário",
+        description: `Não foi possível carregar os detalhes do usuário para edição. Detalhes: ${errorMessage}`,
+      });
+      // Fechar modal ou manter aberto com erro, dependendo da UX desejada
+      // Por enquanto, vamos fechar
+      setIsAddUserOpen(false);
+
+    } finally {
+      setSubmittingUser(false); // Finalizar loading
+    }
   };
 
   const handleDeleteClick = (userId: number) => {
@@ -202,15 +225,42 @@ const Usuarios = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => { // Tornar assíncrona para chamar o backend
     if (userToDelete !== null) {
-      const updatedUsers = users.filter(user => user.id !== userToDelete);
-      setUsers(updatedUsers);
-      setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
-      toast({
-        title: "Usuário excluído",
-        description: "O usuário foi removido com sucesso.",
-      });
+      try {
+        // Chamar a rota DELETE /api/usuarios/:id/hard-delete para exclusão permanente
+        const response = await axios.delete(`http://localhost:3001/api/usuarios/${userToDelete}/hard-delete`);
+
+        if (response.status === 204) { // HTTP 204 No Content (sucesso para exclusão permanente)
+          // Remover o usuário do estado local completamente após exclusão permanente
+          const updatedUsers = users.filter(user => user.id !== userToDelete);
+          setUsers(updatedUsers);
+          // Reaplicar filtros na lista atualizada
+          setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
+
+          toast({
+            title: "Usuário excluído permanentemente",
+            description: "O usuário foi removido do sistema.",
+          });
+        } else {
+           // Tratar outros códigos de sucesso se necessário
+          toast({
+            variant: "destructive",
+            title: "Erro ao excluir usuário",
+            description: `Resposta inesperada do servidor: ${response.status}`,
+          });
+        }
+
+      } catch (error: any) {
+        console.error('Erro ao excluir usuário:', error);
+        const errorMessage = error.response?.data?.message || error.message;
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir usuário",
+          description: `Não foi possível excluir o usuário. Detalhes: ${errorMessage}`,
+        });
+      }
+
       setIsDeleteDialogOpen(false);
       setUserToDelete(null);
     }
@@ -260,16 +310,23 @@ const Usuarios = () => {
       result = result.filter(user => 
         user.name.toLowerCase().includes(lowercaseQuery) || 
         user.email.toLowerCase().includes(lowercaseQuery) ||
-        user.team.toLowerCase().includes(lowercaseQuery)
+        user.role.toLowerCase().includes(lowercaseQuery)
       );
     }
     
     // Apply status filter
     if (status !== 'all') {
-      // Cast status to UserStatus for type safety
       const typedStatus = status as UserStatus;
       result = result.filter(user => user.status === typedStatus);
+    } else {
+        // Se o status for 'all', filtrar apenas usuários pendentes
+        result = result.filter(user => user.status !== 'pending');
     }
+
+    // Log temporário para depuração da filtragem após exclusão
+    console.log(`Aplicando filtros: query='${query}', status='${status}'`);
+    console.log("Lista original para filtrar:", userList);
+    console.log("Lista filtrada:", result);
     
     return result;
   };
@@ -285,38 +342,156 @@ const Usuarios = () => {
     setFilteredUsers(applyFilters(users, searchQuery, status));
   };
 
-  const handleSubmitUser = (e: React.FormEvent) => {
+  const handleSubmitUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isEditMode && currentUser.id) {
-      // Update existing user
-      const updatedUsers = users.map(user => 
-        user.id === currentUser.id ? { ...user, ...currentUser } : user
-      );
-      setUsers(updatedUsers);
-      setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
-      toast({
-        title: "Usuário atualizado",
-        description: "Os dados do usuário foram atualizados com sucesso.",
-      });
-    } else {
-      // Add new user
-      const newUser: User = {
-        ...currentUser,
-        id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
-        lastAccess: '',
-        avatar: null
-      };
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
-      toast({
-        title: "Usuário adicionado",
-        description: "Novo usuário adicionado com sucesso.",
-      });
+    // Validar senhas no modo de criação
+    if (!isEditMode) {
+      if (currentUser.password !== currentUser.confirmPassword) {
+        toast({
+          variant: "destructive",
+          title: "Erro de Senha",
+          description: "As senhas não coincidem.",
+        });
+        return; // Impedir submissão se senhas não coincidirem
+      }
     }
-    
-    setIsAddUserOpen(false);
+
+    // Preparar os dados a serem enviados
+    const userDataToSend: any = {
+      nome: currentUser.name, // Mapear name para nome do backend
+      email: currentUser.email,
+      tipo: currentUser.role, // Mapear role para tipo do backend
+      // Outros campos como genero, idade, ultimoEvento não estão no formulário atual
+    };
+
+    // Incluir password APENAS no modo de criação se preenchido
+    if (!isEditMode && currentUser.password) {
+        userDataToSend.password = currentUser.password; // Enviar senha para criação
+    }
+
+    // No modo de edição, podemos opcionalmente permitir a atualização da senha
+    // Se os campos password e confirmPassword estiverem preenchidos e coincidirem na edição,
+    // enviamos a nova senha para o backend. Caso contrário, não enviamos.
+    if (isEditMode && currentUser.password && currentUser.password === currentUser.confirmPassword) {
+        userDataToSend.password = currentUser.password; // Enviar nova senha para atualização
+    } else if (isEditMode && currentUser.password && currentUser.password !== currentUser.confirmPassword) {
+         // Validar senhas não coincidentes na edição também
+         toast({
+          variant: "destructive",
+          title: "Erro de Senha",
+          description: "As senhas de atualização não coincidem.",
+        });
+        return; // Impedir submissão
+    }
+
+    setSubmittingUser(true); // Indicar loading durante a submissão
+    setSubmitError(null); // Resetar erros de submissão
+
+    if (isEditMode && currentUser.id) {
+      // Lógica para atualizar usuário existente
+      try {
+        // Chamar a rota PUT /api/usuarios/:id
+        const response = await axios.put(`http://localhost:3001/api/usuarios/${currentUser.id}`, userDataToSend);
+
+        if (response.status === 200) { // HTTP 200 OK
+          toast({
+            title: "Usuário atualizado",
+            description: "Os dados do usuário foram atualizados com sucesso.",
+          });
+          // Atualizar o estado local para refletir o usuário editado
+          const updatedUsers = users.map(user => {
+            // Certificar que estamos comparando com o id correto
+            if (user.id.toString() === currentUser.id?.toString()) {
+              // Mesclar os dados existentes com os dados retornados pelo backend
+              // O backend em updateUsuario já retorna o usuário atualizado
+              return { ...user, ...response.data };
+            }
+            return user;
+          });
+          setUsers(updatedUsers);
+          // Reaplicar filtros para atualizar a lista exibida
+          setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
+
+        } else {
+          // Tratar outros códigos de sucesso se necessário
+          toast({
+            variant: "destructive",
+            title: "Erro ao atualizar usuário",
+            description: `Resposta inesperada do servidor: ${response.status}`,
+          });
+        }
+      } catch (error: any) {
+        console.error('Erro ao atualizar usuário:', error);
+        // Exibir mensagem de erro do backend se disponível
+        const errorMessage = error.response?.data?.message || error.message;
+        // Tratar erro de email duplicado na atualização
+        if (error.response && error.response.status === 409) { // HTTP 409 Conflict (email duplicado)
+             toast({
+                variant: "destructive",
+                title: "Erro de Atualização",
+                description: "Este email já está sendo usado por outro usuário.",
+            });
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Erro ao atualizar usuário",
+              description: `Detalhes: ${errorMessage}`,
+            });
+        }
+      }
+      
+      setIsAddUserOpen(false);
+
+    } else {
+      // Lógica para adicionar novo usuário (já implementada, apenas ajustando envio da senha)
+      try {
+        // Chamar a rota POST /api/usuarios
+        const response = await axios.post('http://localhost:3001/api/usuarios', userDataToSend);
+        
+        if (response.status === 201) { // HTTP 201 Created
+          toast({
+            title: "Usuário adicionado",
+            description: "Novo usuário adicionado com sucesso.",
+          });
+          // Adicionar o novo usuário retornado pelo backend ao estado local
+          const newUser = response.data; // O backend deve retornar o usuário criado
+          const updatedUsers = [...users, newUser];
+          setUsers(updatedUsers);
+          // Reaplicar filtros para atualizar a lista exibida
+          setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
+
+        } else {
+          // Tratar outros códigos de sucesso se necessário
+          toast({
+            variant: "destructive",
+            title: "Erro ao adicionar usuário",
+            description: `Resposta inesperada do servidor: ${response.status}`,
+          });
+        }
+      } catch (error: any) {
+        console.error('Erro ao adicionar usuário:', error);
+        // Exibir mensagem de erro do backend se disponível
+        const errorMessage = error.response?.data?.message || error.message;
+        // Tratar erro de email duplicado na criação
+        if (error.response && error.response.status === 409) { // HTTP 409 Conflict (email duplicado)
+             toast({
+                variant: "destructive",
+                title: "Erro de Cadastro",
+                description: "Este email já está sendo usado por outro usuário.",
+            });
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Erro ao adicionar usuário",
+              description: `Detalhes: ${errorMessage}`,
+            });
+        }
+      }
+      
+      setIsAddUserOpen(false);
+    }
+
   };
 
   const handleApprovalClick = (user: User, action: 'approve' | 'reject') => {
@@ -325,29 +500,60 @@ const Usuarios = () => {
     setIsApprovalDialogOpen(true);
   };
 
-  const handleApprovalConfirm = () => {
+  const handleApprovalConfirm = async () => { // Tornar assíncrona
     if (!userToApprove) return;
-    
-    const updatedUsers = users.map(user => {
-      if (user.id === userToApprove.id) {
-        return {
-          ...user,
-          status: approvalAction === 'approve' ? 'active' as UserStatus : 'inactive' as UserStatus
-        };
+
+    setSubmittingUser(true); // Indicar loading
+    setSubmitError(null); // Resetar erros
+
+    const newStatus = approvalAction === 'approve' ? 'active' : 'inactive';
+
+    try {
+      // Chamar a rota PUT /api/usuarios/:id para atualizar o status
+      const response = await axios.put(`http://localhost:3001/api/usuarios/${userToApprove.id}`, {
+        status: newStatus
+      });
+
+      if (response.status === 200) { // HTTP 200 OK
+        // Atualizar o estado local com o novo status
+        const updatedUsers = users.map(user => {
+          if (user.id === userToApprove.id) {
+            return { ...user, status: newStatus as UserStatus };
+          }
+          return user;
+        });
+
+        setUsers(updatedUsers);
+        setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
+
+        toast({
+          title: approvalAction === 'approve' ? "Usuário aprovado" : "Usuário rejeitado",
+          description: approvalAction === 'approve'
+            ? `${userToApprove.name} foi aprovado e está ativo no sistema.`
+            : `${userToApprove.name} foi rejeitado e está inativo no sistema.`,
+        });
+
+      } else {
+        // Tratar outros códigos de sucesso
+        toast({
+          variant: "destructive",
+          title: `Erro ao ${approvalAction === 'approve' ? 'aprovar' : 'rejeitar'} usuário`,
+          description: `Resposta inesperada do servidor: ${response.status}`,
+        });
       }
-      return user;
-    });
-    
-    setUsers(updatedUsers);
-    setFilteredUsers(applyFilters(updatedUsers, searchQuery, statusFilter));
-    
-    toast({
-      title: approvalAction === 'approve' ? "Usuário aprovado" : "Usuário rejeitado",
-      description: approvalAction === 'approve' 
-        ? `${userToApprove.name} foi aprovado e está ativo no sistema.`
-        : `${userToApprove.name} foi rejeitado e está inativo no sistema.`,
-    });
-    
+
+    } catch (error: any) {
+      console.error(`Erro ao ${approvalAction === 'approve' ? 'aprovar' : 'rejeitar'} usuário:`, error);
+      const errorMessage = error.response?.data?.message || error.message;
+      toast({
+        variant: "destructive",
+        title: `Erro ao ${approvalAction === 'approve' ? 'aprovar' : 'rejeitar'} usuário`,
+        description: `Não foi possível ${approvalAction === 'approve' ? 'aprovar' : 'rejeitar'} o usuário. Detalhes: ${errorMessage}`,
+      });
+    }
+
+    // Finalizar loading e fechar o dialog
+    setSubmittingUser(false);
     setIsApprovalDialogOpen(false);
     setUserToApprove(null);
   };
@@ -407,7 +613,7 @@ const Usuarios = () => {
     'Encarregado Regional',
     'Examinadora'
   ];
-  const availableTeams = ['Coral', 'Banda', 'Técnica', 'Mídias', 'Administração'];
+  // const availableTeams = ['Coral', 'Banda', 'Técnica', 'Mídias', 'Administração']; // Times estão removidos
 
   // Filter users with pending status for the approval section
   const pendingUsers = users.filter(user => user.status === 'pending');
@@ -489,13 +695,16 @@ const Usuarios = () => {
                 </div>
 
                 {/* Users table - All users */}
-                <div className="border rounded-md">
+                {loadingUsers ? (
+                  <div className="text-center py-8 text-gray-500">Carregando usuários...</div>
+                ) : usersError ? (
+                  <div className="text-center py-8 text-red-500">{usersError}</div>
+                ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Usuário</TableHead>
                         <TableHead className="hidden md:table-cell">Cargo</TableHead>
-                        <TableHead className="hidden md:table-cell">Equipe</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="hidden md:table-cell">Último Acesso</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
@@ -525,12 +734,17 @@ const Usuarios = () => {
                               </div>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                              <div className="flex items-center gap-2">
-                                <Shield className="h-4 w-4 text-primary-600" />
-                                {user.role}
+                              <div className="flex items-center gap-2 text-gray-700">
+                                <Shield className="h-4 w-4 text-primary-600 flex-shrink-0" />
+                                {user.role && typeof user.role === 'string' && user.role.trim() !== '' ? (
+                                  <span className="text-sm font-medium truncate">{user.role}</span>
+                                ) : user.tipo && typeof user.tipo === 'string' && user.tipo.trim() !== '' ? (
+                                  <span className="text-sm font-medium text-gray-500 truncate">{user.tipo}</span>
+                                ) : (
+                                  <span className="text-sm font-medium text-gray-500">Sem cargo</span>
+                                )}
                               </div>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">{user.team}</TableCell>
                             <TableCell>
                               {getStatusBadge(user.status)}
                             </TableCell>
@@ -594,7 +808,7 @@ const Usuarios = () => {
                       )}
                     </TableBody>
                   </Table>
-                </div>
+                )}
 
                 {/* Pagination */}
                 <Pagination>
@@ -635,7 +849,6 @@ const Usuarios = () => {
                             <TableRow>
                               <TableHead>Usuário</TableHead>
                               <TableHead className="hidden md:table-cell">Cargo</TableHead>
-                              <TableHead className="hidden md:table-cell">Equipe</TableHead>
                               <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -667,7 +880,6 @@ const Usuarios = () => {
                                     {user.role}
                                   </div>
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell">{user.team}</TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex justify-end gap-2">
                                     <Button 
@@ -741,15 +953,15 @@ const Usuarios = () => {
                   <label htmlFor="email" className="text-sm font-medium">
                     Email
                   </label>
-                  <div className="flex items-center border rounded-md focus-within:ring-1 focus-within:ring-primary">
-                    <Mail className="ml-2 h-4 w-4 text-gray-500" />
+                  <div className="relative">
+                    <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       value={currentUser.email}
                       onChange={handleFormChange}
-                      className="border-0 focus-visible:ring-0"
+                      className="pl-9 pr-2"
                       required
                     />
                   </div>
@@ -772,25 +984,6 @@ const Usuarios = () => {
                   </select>
                 </div>
                 
-                <div className="grid gap-2">
-                  <label htmlFor="team" className="text-sm font-medium">
-                    Equipe Principal
-                  </label>
-                  <select
-                    id="team"
-                    name="team"
-                    value={currentUser.team}
-                    onChange={handleFormChange}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                    required
-                  >
-                    <option value="" disabled>Selecione uma equipe</option>
-                    {availableTeams.map(team => (
-                      <option key={team} value={team}>{team}</option>
-                    ))}
-                  </select>
-                </div>
-                
                 {isEditMode && (
                   <div className="grid gap-2">
                     <label htmlFor="status" className="text-sm font-medium">
@@ -807,6 +1000,37 @@ const Usuarios = () => {
                       <option value="inactive">Inativo</option>
                       <option value="pending">Pendente</option>
                     </select>
+                  </div>
+                )}
+                
+                {!isEditMode && ( // Mostrar campos de senha apenas no modo de criação
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <label htmlFor="password" className="text-sm font-medium">
+                        Senha
+                      </label>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={currentUser.password || ''} // Adicionar ao estado e lidar com undefined
+                        onChange={handleFormChange}
+                        required // Senha é obrigatória na criação
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="confirmPassword" className="text-sm font-medium">
+                        Confirmar Senha
+                      </label>
+                      <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        value={currentUser.confirmPassword || ''} // Adicionar ao estado e lidar com undefined
+                        onChange={handleFormChange}
+                        required // Confirmação de senha é obrigatória na criação
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -829,7 +1053,7 @@ const Usuarios = () => {
             <DialogHeader>
               <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+                Tem certeza que deseja excluir este usuário? Esta ação irá desativá-lo no sistema.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

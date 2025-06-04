@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin.routes';
 import alertaIARoutes from './routes/alertaIA.routes';
 import authRoutes from './routes/auth.routes';
 import iaRoutes from './routes/ia.routes';
+import { startEventoStatusUpdater } from './jobs/eventoStatusUpdater';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
@@ -39,13 +40,14 @@ app.use('/api/ia', iaRoutes);
 const server = app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   await testConnection();
-  // await createEventosTable(); // Comentado temporariamente para evitar erro de duplicidade na inicialização
+  await createEventosTable();
   await createUsuariosTable();
   await createEquipesTable();
   await createInscricoesTable();
   await createAvaliacoesTable();
   await createAdminsTable();
   await createAlertasIATable();
+  startEventoStatusUpdater();
 });
 
 import { pool as dbPool } from './config/db'; // Import the named export

@@ -18,6 +18,7 @@ import RelatorioEventos from './pages/RelatorioEventos';
 import RelatorioEquipes from './pages/RelatorioEquipes';
 import RelatorioInscricoes from './pages/RelatorioInscricoes';
 import Alertas from './pages/Alertas';
+import { ToastContainer } from './components/Toast';
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ToastContainer />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />

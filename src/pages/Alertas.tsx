@@ -3,6 +3,7 @@ import Layout from '../components/layout/Layout';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 
 interface Alerta {
   id: string;
@@ -15,6 +16,7 @@ interface Alerta {
 }
 
 const Alertas = () => {
+  const { toast } = useToast();
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,19 +24,34 @@ const Alertas = () => {
   useEffect(() => {
     const fetchAlertas = async () => {
       try {
-        // Assumindo que seu backend roda em http://localhost:3001
-        const response = await axios.get('http://localhost:3001/api/alertas-ia');
+        setLoading(true);
+        console.log('Iniciando busca de alertas...');
+        
+        const response = await axios.get('http://localhost:3001/api/alertas-ia', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        console.log('Resposta da API:', response.data);
         setAlertas(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Erro ao buscar alertas:', err);
-        setError('Não foi possível carregar os alertas.');
+        setError(null);
+      } catch (err: any) {
+        console.error('Erro detalhado ao buscar alertas:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Erro desconhecido';
+        setError(`Não foi possível carregar os alertas: ${errorMessage}`);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar alertas",
+          description: errorMessage
+        });
+      } finally {
         setLoading(false);
       }
     };
 
     fetchAlertas();
-  }, []); // O array vazio garante que o efeito roda apenas uma vez após a montagem inicial
+  }, [toast]);
 
   return (
     <Layout>
@@ -45,7 +62,7 @@ const Alertas = () => {
         </CardHeader>
         <CardContent>
           {loading && <p>Carregando alertas...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {error && <p className="text-red-500">{error}</p>}
           {!loading && !error && alertas.length === 0 && <p>Nenhum alerta encontrado.</p>}
           {!loading && !error && alertas.length > 0 && (
             <div className="overflow-x-auto">
@@ -55,7 +72,7 @@ const Alertas = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Mensagem</TableHead>
                     <TableHead>Data</TableHead>
-                    {/* <TableHead>Lido</TableHead> */} {/* Adicionar coluna para status lido/não lido */}
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -64,7 +81,7 @@ const Alertas = () => {
                       <TableCell className="font-medium">{alerta.tipo}</TableCell>
                       <TableCell>{alerta.mensagem}</TableCell>
                       <TableCell>{new Date(alerta.data).toLocaleDateString()}</TableCell>
-                      {/* <TableCell>{alerta.read ? 'Sim' : 'Não'}</TableCell> */}
+                      <TableCell>{alerta.read ? 'Lido' : 'Não lido'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

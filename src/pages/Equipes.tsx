@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Users, Plus, Edit, Trash2, Check, X } from 'lucide-react';
 import axios from 'axios';
 import { toast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Equipe {
   id: string;
@@ -19,6 +20,7 @@ interface Equipe {
   created_at?: string;
   updated_at?: string;
   responsavel?: string;
+  maxmembros: number;
 }
 
 interface Evento {
@@ -54,19 +56,71 @@ const Equipes = () => {
   const [usersLoading, setUsersLoading] = useState(true); // Estado para loading de usuários
   const [usersError, setUsersError] = useState<string | null>(null); // Estado para erro de usuários
 
-  useEffect(() => {
-    const fetchEquipes = async () => {
-      try {
-        const response = await axios.get<Equipe[]>('http://localhost:3001/api/equipes');
-        setTeams(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Erro ao buscar equipes:', err);
-        setError('Não foi possível carregar as equipes.');
-        setLoading(false);
-      }
-    };
+  // Estado para controlar o usuário selecionado para adicionar à equipe
+  const [userToAddId, setUserToAddId] = useState<string>('');
 
+  // Novos estados para a funcionalidade de busca de usuários
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [filteredUsersForAdd, setFilteredUsersForAdd] = useState<Usuario[]>([]);
+
+  // Estado e função para o modal de detalhes da equipe
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [teamDetails, setTeamDetails] = useState<Equipe | null>(null);
+
+  // Efeito para popular o campo members no formData ao abrir o modal de edição
+  useEffect(() => {
+    if (editingTeam) {
+      setFormData(prevData => ({
+        ...prevData,
+        members: editingTeam.maxmembros !== undefined && editingTeam.maxmembros !== null ? editingTeam.maxmembros : 0,
+      }));
+    } else {
+       // Resetar members para 0 ao fechar o modal de edição ou abrir o de criação
+       setFormData(prevData => ({
+         ...prevData,
+         members: 0,
+       }));
+    }
+  }, [editingTeam]); // Depende do estado editingTeam
+
+  const fetchEquipes = async () => {
+    try {
+      setLoading(true);
+      console.log('Iniciando busca de equipes...');
+
+      const response = await axios.get<Equipe[]>('http://localhost:3001/api/equipes', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      console.log('Resposta da API (equipes):', response.data);
+      setTeams(response.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Erro ao buscar equipes:', err);
+      setError('Não foi possível carregar as equipes.');
+      setLoading(false);
+    }
+  };
+
+  // Efeito para filtrar usuários conforme a busca
+  useEffect(() => {
+    if (memberSearchQuery.trim() === '') {
+      setFilteredUsersForAdd([]);
+      return;
+    }
+    const lowerCaseQuery = memberSearchQuery.toLowerCase();
+    // Filtrar usuários que não são membros da equipe atual (opcional, mas útil)
+    const currentMemberIds = editingTeam?.integrantes || [];
+    const filtered = users.filter(user => 
+      (user.nome.toLowerCase().includes(lowerCaseQuery) || user.email.toLowerCase().includes(lowerCaseQuery))
+      && !currentMemberIds.includes(user.id)
+    );
+    setFilteredUsersForAdd(filtered);
+  }, [memberSearchQuery, users, editingTeam]); // Depende da query, lista de usuários e equipe sendo editada
+
+  useEffect(() => {
     fetchEquipes();
   }, []);
 
@@ -84,7 +138,14 @@ const Equipes = () => {
     };
 
     fetchEvents();
-  }, []);
+
+    // Configurar polling para buscar eventos a cada 30 segundos
+    const pollingInterval = setInterval(fetchEvents, 30000); // 30000 ms = 30 segundos
+
+    // Limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(pollingInterval);
+
+  }, []); // Executar apenas uma vez ao montar o componente
 
   useEffect(() => {
     // Novo useEffect para buscar usuários
@@ -105,13 +166,16 @@ const Equipes = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    console.log('[%s] [handleInputChange] Campo %s, Valor: %s', new Date().toISOString(), name, value);
     setFormData({
       ...formData,
       [name as 'nome' | 'eventoId' | 'leader' | 'members']: name === 'members' ? parseInt(value) || 0 : value
     });
+     console.log('[%s] [handleInputChange] formData.members após atualização: %d', new Date().toISOString(), parseInt(value) || 0);
   };
 
   const openCreateModal = () => {
+    console.log('[%s] [openCreateModal] Abrindo modal de criação.', new Date().toISOString());
     setEditingTeam(null);
     setFormData({
       nome: '',
@@ -122,23 +186,133 @@ const Equipes = () => {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (team: Equipe) => {
-    setEditingTeam(team);
-    setFormData({
-      nome: team.nome,
-      eventoId: team.eventos && team.eventos.length > 0 ? team.eventos[0] : '',
-      leader: team.responsavel || '',
-      members: team.integrantes ? team.integrantes.length : 0,
-    });
-    setIsModalOpen(true);
+  const openEditModal = async (team: Equipe) => {
+    try {
+      console.log('[%s] [openEditModal] Buscando detalhes para equipe ID:', new Date().toISOString(), team.id);
+      const response = await axios.get<Equipe>(`http://localhost:3001/api/equipes/${team.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      const latestTeam = response.data;
+      console.log('[%s] [openEditModal] Detalhes recebidos do backend:', new Date().toISOString(), latestTeam);
+
+      setEditingTeam(latestTeam);
+      setFormData({
+        nome: latestTeam.nome,
+        eventoId: latestTeam.eventos && latestTeam.eventos.length > 0 ? latestTeam.eventos[0] : '',
+        leader: latestTeam.responsavel || '',
+        // Popular o campo members com o valor de maxmembros do backend, ou 0 se não existir/inválido
+        members: latestTeam.maxmembros !== undefined && latestTeam.maxmembros !== null && !isNaN(latestTeam.maxmembros) ? latestTeam.maxmembros : 0,
+      });
+      console.log('[%s] [openEditModal] formData populado com members:', new Date().toISOString(), latestTeam.maxmembros !== undefined && latestTeam.maxmembros !== null && !isNaN(latestTeam.maxmembros) ? latestTeam.maxmembros : 0);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes da equipe para edição:', error);
+      toast({
+        title: "Erro",
+        description: `Não foi possível carregar os detalhes da equipe para edição. Detalhes: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const closeModal = () => {
+    console.log('[%s] [closeModal] Fechando modal.', new Date().toISOString());
     setIsModalOpen(false);
+    setEditingTeam(null); // Resetar editingTeam ao fechar o modal
+     // Resetar formData.members para 0 ao fechar o modal
+     setFormData(prevData => ({ ...prevData, members: 0 }));
+  };
+
+  // Função para adicionar um usuário à equipe
+  const handleAddMember = async () => {
+    if (!editingTeam || !userToAddId) return;
+
+    // Verificar se adicionar o membro excederia o limite usando editingTeam.maxmembros
+    const currentMembersCount = editingTeam.integrantes?.length || 0;
+    const maxMembers = editingTeam.maxmembros || 0; // Usar o limite da equipe de edição
+
+    console.log('[%s] [handleAddMember] Verificando limite: Membros atuais %d, Limite %d', new Date().toISOString(), currentMembersCount, maxMembers);
+
+    if (maxMembers > 0 && currentMembersCount >= maxMembers) {
+      toast({
+        title: "Limite de Membros",
+        description: `Esta equipe já atingiu o limite máximo de ${maxMembers} membros.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const updatedEquipe = (await axios.post(`http://localhost:3001/api/equipes/${editingTeam.id}/integrantes/${userToAddId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      })).data;
+
+      setTeams(teams.map(team => team.id === updatedEquipe.id ? updatedEquipe : team));
+      setEditingTeam(updatedEquipe); // Atualizar a equipe sendo editada na modal com os novos integrantes
+      setUserToAddId('');
+      setMemberSearchQuery('');
+
+      toast({
+        title: "Membro Adicionado",
+        description: "Usuário adicionado à equipe com sucesso.",
+      });
+
+    } catch (error) {
+      console.error('Erro ao adicionar membro à equipe:', error);
+      // Verificar se o erro é do backend indicando limite excedido
+      if (axios.isAxiosError(error) && error.response?.status === 400 && error.response.data?.message?.includes('limite máximo')) {
+         toast({
+            title: "Limite de Membros",
+            description: error.response.data.message,
+            variant: "destructive",
+         });
+      } else {
+        toast({
+          title: "Erro",
+          description: `Não foi possível adicionar o membro. Detalhes: ${(error as Error).message}`,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Função para remover um usuário da equipe
+  const handleRemoveMember = async (usuarioId: string) => {
+    if (!editingTeam) return;
+
+    try {
+      // Chamar o endpoint DELETE /api/equipes/:equipeId/integrantes/:usuarioId
+      const updatedEquipe = (await axios.delete(`http://localhost:3001/api/equipes/${editingTeam.id}/integrantes/${usuarioId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      })).data;
+
+      // Atualizar o estado da equipe no frontend
+      setTeams(teams.map(team => team.id === updatedEquipe.id ? updatedEquipe : team));
+      setEditingTeam(updatedEquipe); // Atualizar a equipe sendo editada na modal
+
+      toast({
+        title: "Membro Removido",
+        description: "Usuário removido da equipe com sucesso.",
+      });
+
+    } catch (error) {
+      console.error('Erro ao remover membro da equipe:', error);
+      toast({
+        title: "Erro",
+        description: `Não foi possível remover o membro. Detalhes: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const saveTeam = async () => {
-    console.log('Valor do nome da equipe antes da validação:', formData.nome);
+    console.log('[%s] [saveTeam] Valor do nome da equipe antes da validação:', new Date().toISOString(), formData.nome);
     if (!formData.nome) {
       toast({
         title: "Erro de Validação",
@@ -152,6 +326,8 @@ const Equipes = () => {
       let teamToSave: any = {
         nome: formData.nome,
         responsavel: formData.leader,
+        maxmembros: formData.members,
+        integrantes: formData.leader ? [formData.leader] : [],
       };
 
       let savedTeam: Equipe;
@@ -160,66 +336,95 @@ const Equipes = () => {
         const updateData: Partial<Equipe> = {
           nome: formData.nome,
           responsavel: formData.leader,
+          maxmembros: formData.members,
         };
 
-        savedTeam = (await axios.put(`http://localhost:3001/api/equipes/${editingTeam.id}`, updateData)).data;
+        // Lógica existente para atualizar integrantes baseada na mudança de responsável
+        if (formData.leader && (!editingTeam.integrantes || !editingTeam.integrantes.includes(formData.leader))) {
+          const integrantesSemAntigoResponsavel = (editingTeam.integrantes || []).filter(id => id !== editingTeam.responsavel);
+          updateData.integrantes = [formData.leader, ...integrantesSemAntigoResponsavel];
+        } else if (formData.leader && editingTeam.responsavel === formData.leader) {
+           if (!editingTeam.integrantes || !editingTeam.integrantes.includes(formData.leader)) {
+                updateData.integrantes = [formData.leader, ...(editingTeam.integrantes || [])];
+           }
+        } else if (!formData.leader && editingTeam.responsavel) {
+           updateData.integrantes = (editingTeam.integrantes || []).filter(id => id !== editingTeam.responsavel);
+        }
+
+        console.log('[%s] [saveTeam - Frontend] Enviando dados para atualização (maxmembros): %d', new Date().toISOString(), updateData.maxmembros);
+
+        savedTeam = (await axios.put(`http://localhost:3001/api/equipes/${editingTeam.id}`, updateData, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        })).data;
+
+        // Atualizar a equipe na lista e no estado de edição com os dados retornados
+        setTeams(teams.map(team => team.id === savedTeam.id ? savedTeam : team));
+        setEditingTeam(savedTeam);
+
         toast({
           title: "Equipe Atualizada",
           description: `A equipe "${savedTeam.nome}" foi atualizada com sucesso.`,
         });
 
+        // Lógica para associar evento existente
         if (formData.eventoId) {
           try {
-            if(editingTeam.eventos && editingTeam.eventos.length > 0) {
-                const isEventAlreadyAssociated = editingTeam.eventos.includes(formData.eventoId);
-
-                if (!isEventAlreadyAssociated) {
-                    await axios.post(`http://localhost:3001/api/equipes/${editingTeam.id}/eventos/${formData.eventoId}`);
-                     toast({
-                        title: "Associação de Evento",
-                        description: `Equipe "${savedTeam.nome}" associada ao novo evento com sucesso.`,
-                    });
-                } else {
-                     toast({
-                        title: "Associação de Evento",
-                        description: `Evento já associado à equipe "${savedTeam.nome}".`,
-                    });
-                }
-            } else {
-                 await axios.post(`http://localhost:3001/api/equipes/${editingTeam.id}/eventos/${formData.eventoId}`);
+            if(savedTeam.id) { // Garantir que a equipe foi salva/atualizada antes de associar evento
+              // Verificar se o evento já está associado (opcional, mas evita logs/toasts duplicados)
+              const isEventAlreadyAssociated = savedTeam.eventos?.includes(formData.eventoId);
+              if (!isEventAlreadyAssociated) {
+                  await axios.post(`http://localhost:3001/api/equipes/${savedTeam.id}/eventos/${formData.eventoId}`, {}, {
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                  });
                   toast({
-                     title: "Associação de Evento",
-                     description: `Equipe "${savedTeam.nome}" associada ao evento com sucesso.`,
-                 });
+                    title: "Associação de Evento",
+                    description: `Equipe "${savedTeam.nome}" associada ao evento com sucesso.`,
+                  });
+              } else {
+                   toast({
+                    title: "Associação de Evento",
+                    description: `Evento já associado à equipe "${savedTeam.nome}".`,
+                  });
+              }
             }
-        } catch (assocError) {
+          } catch (assocError) {
             console.error('Erro ao associar evento à equipe durante edição:', assocError);
             toast({
-                title: "Erro de Associação",
-                description: `Não foi possível associar/atualizar o evento da equipe "${savedTeam.nome}". Detalhes: ${(assocError as Error).message}`,
-                variant: "destructive",
+              title: "Erro de Associação",
+              description: `Não foi possível associar o evento à equipe "${savedTeam.nome}". Detalhes: ${(assocError as Error).message}`,
+              variant: "destructive",
             });
+          }
         }
+      } else { // Lógica para criar equipe
+        console.log('[%s] [saveTeam - Frontend] Enviando dados para criação (maxmembros): %d', new Date().toISOString(), teamToSave.maxmembros);
+        savedTeam = (await axios.post('http://localhost:3001/api/equipes', teamToSave, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        })).data;
 
-        } else if (editingTeam.eventos && editingTeam.eventos.length > 0) {
-             console.warn('Nenhuma lógica implementada para desassociar eventos via este modal.');
-             toast({
-                 title: "Aviso",
-                 description: "A desassociação de eventos não está implementada via este formulário de edição.",
-                 variant: "default",
-             });
-        }
+         // Adicionar a nova equipe à lista e definir como equipe de edição
+        setTeams([...teams, savedTeam]);
+        setEditingTeam(savedTeam); // Definir como equipe de edição para permitir adicionar membros logo após criar
 
-      } else {
-        savedTeam = (await axios.post('http://localhost:3001/api/equipes', teamToSave)).data;
         toast({
           title: "Equipe Criada",
           description: `A equipe "${savedTeam.nome}" foi criada com sucesso.`,
         });
 
+        // Lógica para associar evento após a criação
         if (formData.eventoId && savedTeam.id) {
           try {
-            await axios.post(`http://localhost:3001/api/equipes/${savedTeam.id}/eventos/${formData.eventoId}`);
+            await axios.post(`http://localhost:3001/api/equipes/${savedTeam.id}/eventos/${formData.eventoId}`, {}, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+              }
+            });
             toast({
               title: "Associação de Evento",
               description: `Equipe "${savedTeam.nome}" associada ao evento com sucesso.`,
@@ -236,28 +441,40 @@ const Equipes = () => {
       }
 
       closeModal();
-      const response = await axios.get<Equipe[]>('http://localhost:3001/api/equipes');
-      setTeams(response.data);
+      fetchEquipes(); // Garantir que a lista seja atualizada do backend
 
     } catch (error) {
       console.error('Erro ao salvar equipe:', error);
-      toast({
-        title: "Erro",
-        description: `Não foi possível salvar a equipe. Detalhes: ${(error as Error).message}`,
-        variant: "destructive",
-      });
+      // Verificar se o erro é do backend indicando limite excedido na criação
+       if (axios.isAxiosError(error) && error.response?.status === 400 && error.response.data?.message?.includes('limite máximo')) {
+           toast({
+              title: "Erro de Criação",
+              description: error.response.data.message,
+              variant: "destructive",
+           });
+      } else {
+        toast({
+          title: "Erro",
+          description: `Não foi possível salvar a equipe. Detalhes: ${(error as Error).message}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const deleteTeam = async (teamId: string) => {
     if (confirm("Tem certeza que deseja excluir esta equipe?")) {
       try {
-        await axios.delete(`http://localhost:3001/api/equipes/${teamId}`);
+        await axios.delete(`http://localhost:3001/api/equipes/${teamId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
         toast({
           title: "Equipe Excluída",
           description: "A equipe foi excluída com sucesso.",
         });
-        setTeams(teams.filter(team => team.id !== teamId));
+      setTeams(teams.filter(team => team.id !== teamId));
       } catch (error) {
         console.error('Erro ao excluir equipe:', error);
         toast({
@@ -271,10 +488,20 @@ const Equipes = () => {
 
   const toggleStatus = (teamId: string, newStatus: string) => {
     setTeams(
-      teams.map(team =>
+      teams.map(team => 
         team.id === teamId ? { ...team, status: newStatus } : team
       ) as Equipe[]
     );
+  };
+
+  const openDetailsModal = (team: Equipe) => {
+    setTeamDetails(team);
+    setIsDetailsModalOpen(true);
+  };
+
+  const closeDetailsModal = () => {
+    setTeamDetails(null);
+    setIsDetailsModalOpen(false);
   };
 
   return (
@@ -306,59 +533,66 @@ const Equipes = () => {
                 <div className="text-center py-8 text-red-500">{error}</div>
               )}
               {!loading && !error && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Equipe</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Equipe</TableHead>
                       <TableHead>Evento Associado</TableHead>
-                      <TableHead>Responsável</TableHead>
-                      <TableHead>Membros</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Membros</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                     {teams.length > 0 ? (
                       teams.map(team => {
                         const associatedEvent = events.find(event => team.eventos?.includes(event.id));
                         const eventName = associatedEvent ? associatedEvent.nome : 'Nenhum evento associado';
                         const numberOfIntegrantes = team.integrantes ? team.integrantes.length : 0;
+                        // Encontrar o usuário responsável pelo ID
+                        const responsibleUser = users.find(user => user.id === team.responsavel);
+                        const responsibleName = responsibleUser ? responsibleUser.nome : 'N/A';
+
                         return (
-                          <TableRow key={team.id} className="hover:bg-gray-50">
+                      <TableRow key={team.id} className="hover:bg-gray-50">
                             <TableCell className="font-medium">{team.nome}</TableCell>
                             <TableCell>{eventName}</TableCell>
-                            <TableCell>{team.responsavel || 'N/A'}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <Users className="h-4 w-4 mr-1 text-gray-500" />
+                            <TableCell>{responsibleName}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Users className="h-4 w-4 mr-1 text-gray-500" />
                                 <span>{numberOfIntegrantes}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{/* Status - Não existe no modelo backend de Equipe */ 'N/A'}</TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditModal(team)}>
-                                  <span className="sr-only">Editar</span>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" onClick={() => deleteTeam(team.id)}>
-                                  <span className="sr-only">Excluir</span>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                          Nenhuma equipe encontrada com os filtros atuais.
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditModal(team)}>
+                              <span className="sr-only">Editar</span>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" onClick={() => deleteTeam(team.id)}>
+                              <span className="sr-only">Excluir</span>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                                {/* Botão de Detalhes */}
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openDetailsModal(team)}>
+                                  <span className="sr-only">Detalhes</span>
+                                  <Users className="h-4 w-4" /> {/* Ícone temporário, pode ser alterado */}
+                              </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                        );
+                      })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        Nenhuma equipe encontrada com os filtros atuais.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
               )}
             </div>
           </div>
@@ -367,7 +601,7 @@ const Equipes = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md mx-auto">
+          <Card className="w-full max-w-lg mx-auto">
             <CardHeader>
               <CardTitle>{editingTeam ? 'Editar Equipe' : 'Nova Equipe'}</CardTitle>
               <CardDescription>
@@ -397,7 +631,7 @@ const Equipes = () => {
                 ) : events.length === 0 ? (
                   <p>Nenhum evento disponível.</p>
                 ) : (
-                <select
+                <select 
                   id="eventoId"
                   name="eventoId"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
@@ -424,11 +658,11 @@ const Equipes = () => {
                   <p>Nenhum usuário disponível.</p>
                 ) : (
                 <select
-                  id="leader"
-                  name="leader"
+                  id="leader" 
+                  name="leader" 
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-                  value={formData.leader}
-                  onChange={handleInputChange}
+                  value={formData.leader} 
+                  onChange={handleInputChange} 
                 >
                   <option value="">Selecione um responsável</option>
                   {users.map(user => (
@@ -445,15 +679,173 @@ const Equipes = () => {
                   name="members" 
                   type="number" 
                   min="0" 
-                  placeholder="0" 
-                  value={formData.members} 
+                  placeholder="0"
+                  value={formData.members}
                   onChange={handleInputChange} 
                 />
               </div>
+
+              {/* Seção para gerenciar membros da equipe (apenas em modo de edição) */}
+              {editingTeam && (
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="current-members">Membros Atuais ({editingTeam.integrantes?.length || 0})</Label>
+                    {/* Lista de membros atuais */}
+                    <div className="border rounded-md p-2 max-h-40 overflow-y-auto">
+                      {editingTeam.integrantes && editingTeam.integrantes.length > 0 ? (
+                        editingTeam.integrantes.map(memberId => {
+                          // Encontrar o usuário pelo ID
+                          const member = users.find(user => user.id === memberId);
+                          return (member ? (
+                            <div key={memberId} className="flex items-center justify-between py-1 border-b last:border-b-0">
+                              <span>{member.nome}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-500 hover:bg-red-50"
+                                onClick={() => handleRemoveMember(memberId)}
+                              >
+                                <X className="h-4 w-4" />
+                                Remover
+                              </Button>
+                            </div>
+                          ) : (
+                            <div key={memberId} className="text-gray-500">ID de membro desconhecido: {memberId}</div>
+                          ));
+                        })
+                      ) : (
+                        <div className="text-gray-500">Nenhum membro nesta equipe.</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Adicionar novo membro */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="add-member-search">Adicionar Membro (Buscar)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="add-member-search"
+                        type="text"
+                        placeholder="Buscar usuário por nome ou email..."
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={handleAddMember} 
+                        disabled={
+                          !userToAddId || 
+                          (editingTeam?.integrantes || []).includes(userToAddId) || 
+                          (editingTeam?.maxmembros > 0 && (editingTeam?.integrantes?.length || 0) >= editingTeam.maxmembros)
+                        }
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                     {/* Lista de resultados da busca */}
+                     {memberSearchQuery.trim() !== '' && filteredUsersForAdd.length > 0 && (
+                        <div className="border rounded-md max-h-32 overflow-y-auto">
+                           {filteredUsersForAdd.map(user => (
+                              <div 
+                                 key={user.id} 
+                                 className={`flex items-center justify-between py-1 px-2 cursor-pointer hover:bg-gray-100 ${
+                                    (editingTeam?.maxmembros > 0 && (editingTeam?.integrantes?.length || 0) >= editingTeam.maxmembros) ? 'opacity-50 cursor-not-allowed' : ''
+                                 }`}
+                                 onClick={() => {
+                                    const maxMembers = editingTeam?.maxmembros || 0;
+                                    if (maxMembers === 0 || (editingTeam?.integrantes?.length || 0) < maxMembers) {
+                                       setUserToAddId(user.id);
+                                    } else {
+                                       toast({
+                                          title: "Limite de Membros",
+                                          description: `Esta equipe já atingiu o limite máximo de ${maxMembers} membros.`,
+                                          variant: "destructive",
+                                       });
+                                    }
+                                 }}
+                              >
+                                 <span>{user.nome}</span>
+                                 {userToAddId === user.id && <Check className="h-4 w-4 text-green-500" />}
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                      {memberSearchQuery.trim() !== '' && filteredUsersForAdd.length === 0 && (
+                        <div className="text-sm text-gray-500 px-2">Nenhum usuário encontrado.</div>
+                      )}
+
+                    {/* Mostrar mensagem de limite atingido */}
+                    {editingTeam?.maxmembros > 0 && (editingTeam?.integrantes?.length || 0) >= editingTeam.maxmembros && (
+                        <div className="text-sm text-red-500 px-2">
+                           Limite máximo de {editingTeam.maxmembros} membros atingido.
+                        </div>
+                    )}
+
+                    {/* Campo oculto para o valor selecionado */}
+                    <input type="hidden" value={userToAddId} />
+
+                  </div>
+                </div>
+              )}
+
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline" onClick={closeModal}>Cancelar</Button>
               <Button onClick={saveTeam} disabled={eventsLoading || eventsError !== null || usersLoading || usersError !== null}>Salvar</Button> {/* Desabilitar se usuários estiverem carregando ou com erro */}
+            </CardFooter>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal de Detalhes da Equipe */}
+      {isDetailsModalOpen && teamDetails && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg mx-auto">
+            <CardHeader>
+              <CardTitle>Detalhes da Equipe</CardTitle>
+              <CardDescription>Informações detalhadas da equipe.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Nome da Equipe: {teamDetails.nome}</h3>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Responsável: 
+                  {users.find(user => user.id === teamDetails.responsavel)?.nome || 'N/A'}
+                </h3>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Limite de Membros: {teamDetails.maxmembros !== undefined ? teamDetails.maxmembros : 'Ilimitado'}</h3>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Membros ({teamDetails.integrantes?.length || 0}):</h3>
+                {teamDetails.integrantes && teamDetails.integrantes.length > 0 ? (
+                  <ul className="list-disc list-inside">
+                    {teamDetails.integrantes.map(memberId => {
+                      const member = users.find(user => user.id === memberId);
+                      return member ? <li key={memberId}>{member.nome}</li> : null;
+                    })}
+                  </ul>
+                ) : (
+                  <p>Nenhum membro nesta equipe.</p>
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Eventos Associados:</h3>
+                {teamDetails.eventos && teamDetails.eventos.length > 0 ? (
+                  <ul className="list-disc list-inside">
+                    {teamDetails.eventos.map(eventId => {
+                      const event = events.find(event => event.id === eventId);
+                      return event ? <li key={eventId}>{event.nome}</li> : null;
+                    })}
+                  </ul>
+                ) : (
+                  <p>Nenhum evento associado a esta equipe.</p>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button variant="outline" onClick={closeDetailsModal}>Fechar</Button>
             </CardFooter>
           </Card>
         </div>

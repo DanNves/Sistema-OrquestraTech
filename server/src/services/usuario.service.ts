@@ -1,41 +1,47 @@
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/db';
 import { Usuario } from '../models/usuario.model';
+import bcrypt from 'bcrypt';
 
 export const createUsuario = async (
-  userData: Omit<Usuario, 'id' | 'score' | 'eventosParticipou' | 'ativo'>
+  userData: Omit<Usuario, 'id' | 'score' | 'eventosParticipou' | 'ativo' | 'password_hash'> & { password: string }
 ): Promise<Usuario> => {
-  const { nome, email, genero, idade, tipo, equipeId, ultimoEvento } = userData;
+  const { nome, email, genero, idade, tipo, equipeId, ultimoEvento, password } = userData;
+  
+  const saltRounds = 10;
+  const password_hash = await bcrypt.hash(password, saltRounds);
+
   const id = uuidv4();
   const newUsuario: Usuario = {
     id,
     nome,
     email,
+    password_hash,
     genero,
     idade,
     tipo,
-    eventosParticipou: [], // Default value
-    score: 0, // Default value
+    eventosParticipou: [],
+    score: 0,
     equipeId,
     ultimoEvento,
-    ativo: true, // Default value
-    // created_at and updated_at will be handled by the database
+    ativo: true,
   };
 
   const client = await pool.connect();
   try {
     const query = `
       INSERT INTO usuarios (
-        id, nome, email, genero, idade, tipo, eventosParticipou, 
+        id, nome, email, password_hash, genero, idade, tipo, eventosParticipou, 
         score, equipeId, ultimoEvento, ativo
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *;
     `;
     const values = [
       newUsuario.id,
       newUsuario.nome,
       newUsuario.email,
+      newUsuario.password_hash,
       newUsuario.genero,
       newUsuario.idade,
       newUsuario.tipo,
@@ -55,7 +61,7 @@ export const createUsuario = async (
 export const getAllUsuarios = async (): Promise<Usuario[]> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM usuarios WHERE ativo = true;'); // Only return active users
+    const result = await client.query('SELECT * FROM usuarios;');
     return result.rows;
   } finally {
     client.release();
@@ -72,6 +78,16 @@ export const getUsuarioById = async (id: string): Promise<Usuario | null> => {
   }
 };
 
+export const getUsuarioByEmail = async (email: string): Promise<Usuario | null> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM usuarios WHERE email = $1;', [email]);
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+};
+
 export const updateUsuario = async (
   id: string,
   userData: Partial<Omit<Usuario, 'id'>>
@@ -80,20 +96,18 @@ export const updateUsuario = async (
   try {
     const existingUsuario = await getUsuarioById(id);
     if (!existingUsuario) {
-      return null; // Or throw an error if user not found or not active
+      return null;
     }
 
-    // Merge existing data with new data
     const fieldsToUpdate = { ...existingUsuario, ...userData, updated_at: new Date() };
     
-    // Ensure 'ativo' is handled correctly if it's part of userData
     if (userData.ativo !== undefined) {
         fieldsToUpdate.ativo = userData.ativo;
     }
 
     const allowedFields = [
         'nome', 'email', 'genero', 'idade', 'tipo', 'eventosParticipou', 
-        'score', 'equipeId', 'ultimoEvento', 'ativo', 'updated_at'
+        'score', 'equipeId', 'ultimoEvento', 'ativo', 'updated_at', 'password_hash'
     ];
     
     let setClause = '';
@@ -102,7 +116,7 @@ export const updateUsuario = async (
 
     for (const key in fieldsToUpdate) {
         if (fieldsToUpdate.hasOwnProperty(key) && allowedFields.includes(key) && key !== 'id') {
-            setClause += `${key} = $${valueCount}, `;
+            setClause += `"${key}" = $${valueCount}, `;
             values.push(fieldsToUpdate[key as keyof typeof fieldsToUpdate]);
             valueCount++;
         }
@@ -128,7 +142,6 @@ export const updateUsuario = async (
   }
 };
 
-// Soft delete by setting 'ativo' to false
 export const deleteUsuario = async (id: string): Promise<boolean> => {
   const client = await pool.connect();
   try {
@@ -137,6 +150,20 @@ export const deleteUsuario = async (id: string): Promise<boolean> => {
       [id]
     );
     return result.rowCount > 0;
+  } finally {
+    client.release();
+  }
+};
+
+// Function for permanent deletion (hard delete)
+export const hardDeleteUsuario = async (id: string): Promise<boolean> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'DELETE FROM usuarios WHERE id = $1 RETURNING id;', 
+      [id]
+    );
+    return result.rowCount > 0; // Returns true if a row was deleted
   } finally {
     client.release();
   }

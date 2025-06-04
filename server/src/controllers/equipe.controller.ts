@@ -3,11 +3,11 @@ import * as equipeService from '../services/equipe.service';
 
 export const createEquipe = async (req: Request, res: Response) => {
   try {
-    const { nome, responsavel } = req.body;
+    const { nome, responsavel, maxmembros } = req.body;
     if (!nome) {
       return res.status(400).json({ message: 'Missing required field: nome' });
     }
-    const newEquipe = await equipeService.createEquipe({ nome, responsavel });
+    const newEquipe = await equipeService.createEquipe({ nome, responsavel, maxmembros });
     res.status(201).json(newEquipe);
   } catch (error) {
     console.error('Error creating equipe:', error);
@@ -41,6 +41,8 @@ export const getEquipeById = async (req: Request, res: Response) => {
 
 export const updateEquipe = async (req: Request, res: Response) => {
   try {
+    console.log('[%s] [updateEquipe] Recebido ID da equipe:', new Date().toISOString(), req.params.id);
+    console.log('[%s] [updateEquipe] Dados recebidos no corpo da requisição:', new Date().toISOString(), req.body);
     const equipe = await equipeService.updateEquipe(req.params.id, req.body);
     if (equipe) {
       res.status(200).json(equipe);
@@ -71,7 +73,7 @@ export const addIntegranteToEquipe = async (req: Request, res: Response) => {
   try {
     const { equipeId, usuarioId } = req.params;
     if (!usuarioId) {
-        return res.status(400).json({ message: 'Missing usuarioId in request body or path' });
+      return res.status(400).json({ message: 'Missing usuarioId in request body or path' });
     }
     const equipe = await equipeService.addIntegranteToEquipe(equipeId, usuarioId);
     if (equipe) {
@@ -81,7 +83,11 @@ export const addIntegranteToEquipe = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error('Error adding integrante to equipe:', error);
-    res.status(500).json({ message: 'Error adding integrante to equipe', error: (error as Error).message });
+    if ((error as Error).message.includes('limite máximo')) {
+      res.status(400).json({ message: (error as Error).message });
+    } else {
+      res.status(500).json({ message: 'Error adding integrante to equipe', error: (error as Error).message });
+    }
   }
 };
 

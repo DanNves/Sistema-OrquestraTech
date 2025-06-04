@@ -4,68 +4,96 @@ import { Evento } from '../models/evento.model'; // Assuming Evento has all fiel
 
 export const createEvento = async (req: Request, res: Response) => {
   try {
-    // Basic validation
-    const { nome, data, titulo, horaInicio, horaFim, tipo, status } = req.body;
-    if (!nome || !data || !titulo || !horaInicio || !horaFim || !tipo || !status) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-    const newEvento = await eventoService.createEvento(req.body);
-    res.status(201).json(newEvento);
+    console.log('Recebida requisição para criar novo evento:', req.body);
+    const evento = await eventoService.createEvento(req.body);
+    console.log('Evento criado com sucesso:', evento);
+    res.status(201).json(evento);
   } catch (error) {
-    console.error('Error creating evento:', error);
-    res.status(500).json({ message: 'Error creating evento', error: (error as Error).message });
+    console.error('Erro ao criar evento:', error);
+    res.status(500).json({ 
+      error: 'Erro ao criar evento',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 };
 
 export const getAllEventos = async (req: Request, res: Response) => {
   try {
+    console.log('Recebida requisição para buscar todos os eventos');
     const eventos = await eventoService.getAllEventos();
-    res.status(200).json(eventos);
+    console.log(`Retornando ${eventos.length} eventos`);
+    res.json(eventos);
   } catch (error) {
-    console.error('Error getting eventos:', error);
-    res.status(500).json({ message: 'Error getting eventos', error: (error as Error).message });
+    console.error('Erro ao buscar eventos:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar eventos',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 };
 
 export const getEventoById = async (req: Request, res: Response) => {
   try {
-    const evento = await eventoService.getEventoById(req.params.id);
-    if (evento) {
-      res.status(200).json(evento);
-    } else {
-      res.status(404).json({ message: 'Evento not found' });
+    const { id } = req.params;
+    console.log(`Recebida requisição para buscar evento com ID: ${id}`);
+    
+    const evento = await eventoService.getEventoById(id);
+    if (!evento) {
+      console.log(`Evento com ID ${id} não encontrado`);
+      return res.status(404).json({ error: 'Evento não encontrado' });
     }
+    
+    console.log(`Evento encontrado: ${evento.nome}`);
+    res.json(evento);
   } catch (error) {
-    console.error('Error getting evento by ID:', error);
-    res.status(500).json({ message: 'Error getting evento by ID', error: (error as Error).message });
+    console.error(`Erro ao buscar evento com ID ${req.params.id}:`, error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar evento',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 };
 
 export const updateEvento = async (req: Request, res: Response) => {
   try {
-    const evento = await eventoService.updateEvento(req.params.id, req.body);
-    if (evento) {
-      res.status(200).json(evento);
-    } else {
-      res.status(404).json({ message: 'Evento not found' });
+    const { id } = req.params;
+    console.log(`Recebida requisição para atualizar evento ${id}:`, req.body);
+    
+    const evento = await eventoService.updateEvento(id, req.body);
+    if (!evento) {
+      console.log(`Evento com ID ${id} não encontrado para atualização`);
+      return res.status(404).json({ error: 'Evento não encontrado' });
     }
+    
+    console.log('Evento atualizado com sucesso:', evento);
+    res.json(evento);
   } catch (error) {
-    console.error('Error updating evento:', error);
-    res.status(500).json({ message: 'Error updating evento', error: (error as Error).message });
+    console.error(`Erro ao atualizar evento ${req.params.id}:`, error);
+    res.status(500).json({ 
+      error: 'Erro ao atualizar evento',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 };
 
 export const deleteEvento = async (req: Request, res: Response) => {
   try {
-    const success = await eventoService.deleteEvento(req.params.id);
-    if (success) {
-      res.status(204).send(); // No content
-    } else {
-      res.status(404).json({ message: 'Evento not found' });
+    const { id } = req.params;
+    console.log(`Recebida requisição para deletar evento ${id}`);
+    
+    const deleted = await eventoService.deleteEvento(id);
+    if (!deleted) {
+      console.log(`Evento com ID ${id} não encontrado para deleção`);
+      return res.status(404).json({ error: 'Evento não encontrado' });
     }
+    
+    console.log(`Evento ${id} deletado com sucesso`);
+    res.status(204).send();
   } catch (error) {
-    console.error('Error deleting evento:', error);
-    res.status(500).json({ message: 'Error deleting evento', error: (error as Error).message });
+    console.error(`Erro ao deletar evento ${req.params.id}:`, error);
+    res.status(500).json({ 
+      error: 'Erro ao deletar evento',
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
   }
 };

@@ -1,7 +1,12 @@
 export interface Equipe {
   id: string;
   nome: string;
-  membros: string[]; // Array of Usuario IDs
-  responsavel?: string; // Adicionado campo responsavel
-  // Adicionar outros campos relevantes conforme necessário
+  integrantes: string[]; // Array of Usuario IDs
+  eventos: string[]; // Array of Evento IDs
+  mediaPontuacao: number;
+  presencaMedia: number;
+  responsavel?: string;
+  maxmembros: number;
+  created_at?: Date;
+  updated_at?: Date;
 }

@@ -24,7 +24,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', { // Assumindo a rota de login
+      // Primeiro tenta login como admin
+      const adminResponse = await fetch('http://localhost:3001/api/auth/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,18 +33,34 @@ const Login = () => {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        localStorage.setItem('authToken', adminData.token);
+        localStorage.setItem('userType', 'admin');
+        console.log('Login de admin bem-sucedido', adminData);
+        navigate('/eventos');
+        return;
+      }
+
+      // Se não for admin, tenta login como usuário normal
+      const userResponse = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
         throw new Error(errorData.message || 'Erro ao fazer login');
       }
 
-      const data = await response.json();
-      // Assumindo que o token vem em um campo chamado 'token'
-      localStorage.setItem('authToken', data.token); 
-
-      console.log('Login bem-sucedido', data);
-      // Redirecionar para a página de eventos após login bem-sucedido
-      navigate('/eventos'); 
+      const userData = await userResponse.json();
+      localStorage.setItem('authToken', userData.token);
+      localStorage.setItem('userType', 'user');
+      console.log('Login de usuário bem-sucedido', userData);
+      navigate('/eventos');
 
     } catch (err: any) {
       console.error('Erro no login:', err);

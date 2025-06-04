@@ -130,11 +130,12 @@ export const createEquipesTable = async () => {
         mediaPontuacao REAL DEFAULT 0,
         presencaMedia REAL DEFAULT 0, -- Percentage
         responsavel TEXT, -- Nova coluna para o responsável (pode ser NULL)
+        maxmembros INTEGER NOT NULL DEFAULT 0, -- Nova coluna para o limite de membros, sem valor padrão
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('Equipes table created successfully with responsavel column or already exists.');
+    console.log('Equipes table created successfully with responsavel and maxmembros columns.');
   } catch (error) {
     console.error('Error creating equipes table:', error);
   } finally {
@@ -145,14 +146,18 @@ export const createEquipesTable = async () => {
 export const createUsuariosTable = async () => {
   const client = await pool.connect();
   try {
+    // Dropar a tabela existente para adicionar a nova coluna
+    await client.query(`DROP TABLE IF EXISTS usuarios CASCADE;`);
+
     await client.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
+      CREATE TABLE usuarios (
         id TEXT PRIMARY KEY,
         nome TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL, -- Adicionando coluna para hash da senha
         genero TEXT CHECK (genero IN ('Masculino', 'Feminino', 'Outro', 'Prefere não dizer')),
         idade INTEGER,
-        tipo TEXT CHECK (tipo IN ('Músico', 'Técnico', 'Organizador')),
+        tipo TEXT CHECK (tipo IN ('Músico', 'Organista', 'Instrutor(a)', 'Candidato(a)', 'Encarregado Local', 'Encarregado Regional', 'Examinadora')),
         eventosParticipou TEXT[],
         score REAL DEFAULT 0,
         equipeId TEXT,
@@ -162,7 +167,7 @@ export const createUsuariosTable = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('Usuarios table created successfully or already exists.');
+    console.log('Usuarios table created successfully with password_hash column.');
   } catch (error) {
     console.error('Error creating usuarios table:', error);
   } finally {

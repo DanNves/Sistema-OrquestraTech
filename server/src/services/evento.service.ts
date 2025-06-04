@@ -89,8 +89,13 @@ export const createEvento = async (
 export const getAllEventos = async (): Promise<Evento[]> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM eventos;');
+    console.log('Buscando todos os eventos...');
+    const result = await client.query('SELECT * FROM eventos ORDER BY data DESC;');
+    console.log(`Encontrados ${result.rowCount} eventos`);
     return result.rows;
+  } catch (error) {
+    console.error('Erro ao buscar eventos:', error);
+    throw error;
   } finally {
     client.release();
   }
@@ -99,8 +104,17 @@ export const getAllEventos = async (): Promise<Evento[]> => {
 export const getEventoById = async (id: string): Promise<Evento | null> => {
   const client = await pool.connect();
   try {
+    console.log(`Buscando evento com ID: ${id}`);
     const result = await client.query('SELECT * FROM eventos WHERE id = $1;', [id]);
-    return result.rows[0] || null;
+    if (result.rows.length === 0) {
+      console.log(`Evento com ID ${id} não encontrado`);
+      return null;
+    }
+    console.log(`Evento encontrado: ${result.rows[0].nome}`);
+    return result.rows[0];
+  } catch (error) {
+    console.error(`Erro ao buscar evento com ID ${id}:`, error);
+    throw error;
   } finally {
     client.release();
   }
@@ -112,8 +126,12 @@ export const updateEvento = async (
 ): Promise<Evento | null> => {
   const client = await pool.connect();
   try {
+    console.log(`Atualizando evento ${id}:`, eventData);
+    
+    // Primeiro, buscar o evento existente
     const existingEvento = await getEventoById(id);
     if (!existingEvento) {
+      console.log(`Evento ${id} não encontrado para atualização`);
       return null;
     }
 
@@ -246,19 +264,14 @@ export const updateEvento = async (
 export const deleteEvento = async (id: string): Promise<boolean> => {
   const client = await pool.connect();
   try {
-    // Verificar o status do evento antes de excluir
-    const evento = await getEventoById(id);
-    if (!evento) {
-      return false;
-    }
-
-    // Removida a validação de status para permitir exclusão em qualquer estado
-    // if (evento.status !== 'Programado') {
-    //   throw new Error('Apenas eventos programados podem ser excluídos');
-    // }
-
-    const result = await client.query('DELETE FROM eventos WHERE id = $1', [id]);
-    return result.rowCount > 0;
+    console.log(`Deletando evento ${id}`);
+    const result = await client.query('DELETE FROM eventos WHERE id = $1;', [id]);
+    const deleted = result.rowCount > 0;
+    console.log(`Evento ${id} ${deleted ? 'deletado com sucesso' : 'não encontrado'}`);
+    return deleted;
+  } catch (error) {
+    console.error(`Erro ao deletar evento ${id}:`, error);
+    throw error;
   } finally {
     client.release();
   }

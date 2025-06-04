@@ -76,3 +76,18 @@ export const deleteUsuario = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting usuario', error: (error as Error).message });
   }
 };
+
+// New controller function for hard deleting a user
+export const hardDeleteUsuario = async (req: Request, res: Response) => {
+  try {
+    const success = await usuarioService.hardDeleteUsuario(req.params.id);
+    if (success) {
+      res.status(204).send(); // No content, successful hard delete
+    } else {
+      res.status(404).json({ message: 'Usuario not found' });
+    }
+  } catch (error) {
+    console.error('Error hard deleting usuario:', error);
+    res.status(500).json({ message: 'Error hard deleting usuario', error: (error as Error).message });
+  }
+};
