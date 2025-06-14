@@ -73,7 +73,7 @@ export const addIntegranteToEquipe = async (req: Request, res: Response) => {
   try {
     const { equipeId, usuarioId } = req.params;
     if (!usuarioId) {
-      return res.status(400).json({ message: 'Missing usuarioId in request body or path' });
+        return res.status(400).json({ message: 'Missing usuarioId in request body or path' });
     }
     const equipe = await equipeService.addIntegranteToEquipe(equipeId, usuarioId);
     if (equipe) {
@@ -86,7 +86,7 @@ export const addIntegranteToEquipe = async (req: Request, res: Response) => {
     if ((error as Error).message.includes('limite máximo')) {
       res.status(400).json({ message: (error as Error).message });
     } else {
-      res.status(500).json({ message: 'Error adding integrante to equipe', error: (error as Error).message });
+    res.status(500).json({ message: 'Error adding integrante to equipe', error: (error as Error).message });
     }
   }
 };

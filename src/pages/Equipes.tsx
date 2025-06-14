@@ -33,6 +33,7 @@ interface Usuario {
   id: string;
   nome: string;
   email: string;
+  ativo: boolean;
   // Adicionar outros campos de usuário relevantes se necessário
 }
 
@@ -48,6 +49,9 @@ const Equipes = () => {
     leader: '',
     members: 0,
   });
+
+  // Lista de usuários que não estão em nenhuma equipe e estão ativos
+  const [availableUsers, setAvailableUsers] = useState<Usuario[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,21 +108,35 @@ const Equipes = () => {
     }
   };
 
-  // Efeito para filtrar usuários conforme a busca
+  // Efeito para filtrar usuários disponíveis (livres e ativos)
+  useEffect(() => {
+    // IDs de todos os integrantes de todas as equipes
+    const allTeamMemberIds = new Set<string>();
+    teams.forEach(team => {
+      if (Array.isArray(team.integrantes)) {
+        team.integrantes.forEach(memberId => allTeamMemberIds.add(memberId));
+      }
+    });
+
+    // Filtrar usuários que não estão em nenhuma equipe e estão ativos
+    const filtered = users.filter(user => 
+      !allTeamMemberIds.has(user.id) && user.ativo === true
+    );
+    setAvailableUsers(filtered);
+  }, [users, teams]); // Depende da lista de usuários e equipes
+
+  // Efeito para filtrar usuários conforme a busca no campo 'Adicionar Membro'
   useEffect(() => {
     if (memberSearchQuery.trim() === '') {
-      setFilteredUsersForAdd([]);
+      setFilteredUsersForAdd(availableUsers); // Mostra todos os disponíveis se a busca estiver vazia
       return;
     }
     const lowerCaseQuery = memberSearchQuery.toLowerCase();
-    // Filtrar usuários que não são membros da equipe atual (opcional, mas útil)
-    const currentMemberIds = editingTeam?.integrantes || [];
-    const filtered = users.filter(user => 
-      (user.nome.toLowerCase().includes(lowerCaseQuery) || user.email.toLowerCase().includes(lowerCaseQuery))
-      && !currentMemberIds.includes(user.id)
+    const filtered = availableUsers.filter(user => 
+      user.nome.toLowerCase().includes(lowerCaseQuery) || user.email.toLowerCase().includes(lowerCaseQuery)
     );
     setFilteredUsersForAdd(filtered);
-  }, [memberSearchQuery, users, editingTeam]); // Depende da query, lista de usuários e equipe sendo editada
+  }, [memberSearchQuery, availableUsers]); // Depende da query de busca e dos usuários disponíveis
 
   useEffect(() => {
     fetchEquipes();
@@ -198,7 +216,7 @@ const Equipes = () => {
       console.log('[%s] [openEditModal] Detalhes recebidos do backend:', new Date().toISOString(), latestTeam);
 
       setEditingTeam(latestTeam);
-      setFormData({
+    setFormData({
         nome: latestTeam.nome,
         eventoId: latestTeam.eventos && latestTeam.eventos.length > 0 ? latestTeam.eventos[0] : '',
         leader: latestTeam.responsavel || '',
@@ -206,7 +224,7 @@ const Equipes = () => {
         members: latestTeam.maxmembros !== undefined && latestTeam.maxmembros !== null && !isNaN(latestTeam.maxmembros) ? latestTeam.maxmembros : 0,
       });
       console.log('[%s] [openEditModal] formData populado com members:', new Date().toISOString(), latestTeam.maxmembros !== undefined && latestTeam.maxmembros !== null && !isNaN(latestTeam.maxmembros) ? latestTeam.maxmembros : 0);
-      setIsModalOpen(true);
+    setIsModalOpen(true);
     } catch (error) {
       console.error('Erro ao carregar detalhes da equipe para edição:', error);
       toast({
@@ -229,16 +247,12 @@ const Equipes = () => {
   const handleAddMember = async () => {
     if (!editingTeam || !userToAddId) return;
 
-    // Verificar se adicionar o membro excederia o limite usando editingTeam.maxmembros
-    const currentMembersCount = editingTeam.integrantes?.length || 0;
-    const maxMembers = editingTeam.maxmembros || 0; // Usar o limite da equipe de edição
-
-    console.log('[%s] [handleAddMember] Verificando limite: Membros atuais %d, Limite %d', new Date().toISOString(), currentMembersCount, maxMembers);
-
-    if (maxMembers > 0 && currentMembersCount >= maxMembers) {
+    // Validar se o usuário a ser adicionado está livre e ativo
+    const userToAdd = availableUsers.find(u => u.id === userToAddId);
+    if (!userToAdd) {
       toast({
-        title: "Limite de Membros",
-        description: `Esta equipe já atingiu o limite máximo de ${maxMembers} membros.`,
+        title: "Usuário Não Disponível",
+        description: "O usuário selecionado já está em uma equipe ou não está ativo.",
         variant: "destructive",
       });
       return;
@@ -270,7 +284,7 @@ const Equipes = () => {
             description: error.response.data.message,
             variant: "destructive",
          });
-      } else {
+    } else {
         toast({
           title: "Erro",
           description: `Não foi possível adicionar o membro. Detalhes: ${(error as Error).message}`,
@@ -665,7 +679,7 @@ const Equipes = () => {
                   onChange={handleInputChange} 
                 >
                   <option value="">Selecione um responsável</option>
-                  {users.map(user => (
+                  {availableUsers.map(user => (
                     <option key={user.id} value={user.id}>{user.nome}</option>
                   ))}
                 </select>
@@ -679,12 +693,12 @@ const Equipes = () => {
                   name="members" 
                   type="number" 
                   min="0" 
-                  placeholder="0"
-                  value={formData.members}
+                  placeholder="0" 
+                  value={formData.members} 
                   onChange={handleInputChange} 
                 />
               </div>
-
+              
               {/* Seção para gerenciar membros da equipe (apenas em modo de edição) */}
               {editingTeam && (
                 <div className="grid gap-4">
@@ -785,7 +799,7 @@ const Equipes = () => {
                     <input type="hidden" value={userToAddId} />
 
                   </div>
-                </div>
+              </div>
               )}
 
             </CardContent>

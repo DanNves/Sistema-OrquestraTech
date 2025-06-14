@@ -62,7 +62,7 @@ export const createEvento = async (
 
     const query = `
       INSERT INTO eventos (
-        id, nome, data, descricao, local, equipesParticipantes, 
+        id, nome, data, descricao, local, equipesparticipantes, 
         titulo, horaInicio, horaFim, tipo, status, participantes
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -71,9 +71,18 @@ export const createEvento = async (
     // Usar o valor de 'nome' para preencher o campo 'titulo'
     const titulo = nome.trim(); 
 
+    // Garantir que equipesparticipantes e participantes sejam arrays
+    const equipesParticipantesArray = Array.isArray(equipesParticipantes) ? equipesParticipantes : [];
+    const participantesArray = Array.isArray(participantes) ? participantes : [];
+
+    console.log('Arrays normalizados:', {
+      equipesParticipantes: equipesParticipantesArray,
+      participantes: participantesArray
+    });
+
     const values = [
-      id, nome.trim(), data, descricao?.trim() || '', local.trim(), equipesParticipantes || [],
-      titulo, horaInicio, horaFim, tipo, status, participantes || []
+      id, nome.trim(), data, descricao?.trim() || '', local.trim(), equipesParticipantesArray,
+      titulo, horaInicio, horaFim, tipo, status, participantesArray
     ];
 
     console.log('Valores para inserção:', values); // Debug

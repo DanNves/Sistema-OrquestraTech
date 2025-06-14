@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Calendar, MapPin, Users, Star } from 'lucide-react';
+import { Download, Calendar, MapPin, Users, Star, FileText } from 'lucide-react';
 import { Evento } from '../../server/src/models/evento.model'; // Importar a interface Evento
+import { Equipe } from '../../server/src/models/equipe.model'; // Importar a interface Equipe
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import * as XLSX from 'xlsx';
+import axios from 'axios'; // Importar axios
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Cores para os diferentes tipos de eventos
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -13,6 +17,8 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 const RelatorioEventos = () => {
   // Estados para os dados dos eventos, carregamento e erro
   const [eventos, setEventos] = useState<Evento[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,53 +29,109 @@ const RelatorioEventos = () => {
 
   // Estados para os filtros
   const [filtroTipo, setFiltroTipo] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroLocal, setFiltroLocal] = useState('');
+  const [filtroData, setFiltroData] = useState('todos');
+
+  // Função auxiliar para normalizar equipes (se necessário, igual ao Dashboard)
+  const normalizarEquipe = (equipe: any) => {
+    return {
+      ...equipe,
+      id: equipe.id || equipe._id,
+      nome: equipe.nome || 'Sem nome',
+      integrantes: Array.isArray(equipe.integrantes) ? equipe.integrantes : []
+    };
+  };
 
   // Hook useEffect para buscar os dados da API quando o componente montar
   useEffect(() => {
-    const fetchEventos = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // TODO: Ajustar a URL da API se o frontend estiver em uma porta diferente do backend
-        // Assume que o backend está rodando em http://localhost:3001
-        const response = await fetch('http://localhost:3001/api/eventos');
-        
-        if (!response.ok) {
-          // Lidar com respostas de erro da API (ex: 404, 500)
-          const errorData = await response.json();
-          throw new Error(errorData.message || `Erro HTTP: ${response.status}`);
-        }
-        
-        const data: Evento[] = await response.json();
-        
-        // Converter strings de data para objetos Date, se necessário
-        // Depende de como a data é retornada pela API (Date object vs string ISO)
-        const eventosComDatas = data.map(evento => ({
-            ...evento,
-            data: new Date(evento.data) // Exemplo: converter string ISO para Date
-        }));
+        setError(null);
 
-        setEventos(eventosComDatas);
+        // Buscar eventos, equipes e usuários em paralelo
+        const [eventosRes, equipesRes, usuariosRes] = await Promise.all([
+          axios.get<Evento[]>('http://localhost:3001/api/eventos'),
+          axios.get<Equipe[]>('http://localhost:3001/api/equipes'),
+          axios.get<Usuario[]>('http://localhost:3001/api/usuarios')
+        ]);
+
+        console.log('Dados brutos da API (Eventos):', eventosRes.data);
+        console.log('Dados brutos da API (Equipes):', equipesRes.data);
+        console.log('Dados brutos da API (Usuários):', usuariosRes.data);
+        
+        const eventosNormalizados = eventosRes.data.map((evento: any) => ({
+          ...evento,
+          data: new Date(evento.data), // Converte a string de data em um objeto Date
+          equipesParticipantes: Array.isArray(evento.equipesParticipantes) ? evento.equipesParticipantes :
+            Array.isArray(evento.equipesparticipantes) ? evento.equipesparticipantes : [],
+          participantes: Array.isArray(evento.participantes) ? evento.participantes : []
+        }));
+        const equipesNormalizadas = equipesRes.data.map(normalizarEquipe);
+
+        console.log('Eventos normalizados para Relatório:', eventosNormalizados);
+        console.log('Equipes normalizadas para Relatório:', equipesNormalizadas);
+
+        setEventos(eventosNormalizados);
+        setEquipes(equipesNormalizadas);
+        setUsuarios(usuariosRes.data);
       } catch (err) {
-        console.error('Erro ao buscar eventos:', err);
-        setError('Erro ao carregar eventos. Tente novamente mais tarde.');
+        console.error('Erro ao buscar dados:', err);
+        setError('Erro ao carregar dados. Tente novamente mais tarde.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEventos();
+    fetchData();
   }, []); // O array vazio garante que o useEffect roda apenas uma vez ao montar o componente
+
+  // Função auxiliar para contar participantes (copiada e adaptada do Dashboard)
+  const contarParticipantes = (evento: Evento) => {
+    let total = 0;
+    
+    console.log('Contando participantes para evento (Relatório):', evento.nome);
+    console.log('Equipes participantes (Relatório):', evento.equipesParticipantes);
+
+    // Contar membros das equipes participantes
+    if (Array.isArray(evento.equipesParticipantes) && evento.equipesParticipantes.length > 0) {
+      evento.equipesParticipantes.forEach(eqId => {
+        const equipe = equipes.find(e => e.id === eqId || e._id === eqId);
+        if (equipe && Array.isArray(equipe.integrantes)) {
+          total += equipe.integrantes.length;
+        } else {
+          console.warn(`Equipe não encontrada ou sem integrantes (Relatório): ${eqId}`);
+        }
+      });
+    }
+    
+    // Contar participantes diretos
+    if (Array.isArray(evento.participantes)) {
+      total += evento.participantes.length;
+    }
+    
+    console.log(`Total de participantes para ${evento.nome} (Relatório): ${total}`);
+    return total;
+  };
 
   // Filtrar eventos com base em todos os critérios
   const filteredEventos = eventos.filter(evento => {
     const matchSearch = evento.nome.toLowerCase().includes(searchTerm.toLowerCase());
     const matchTipo = !filtroTipo || evento.tipo === filtroTipo;
-    const matchStatus = !filtroStatus || evento.status === filtroStatus;
+    const matchStatus = filtroStatus === 'todos' || evento.status === filtroStatus;
     const matchLocal = !filtroLocal || evento.local === filtroLocal;
+    const matchData = filtroData === 'todos' || 
+      (filtroData === 'hoje' && format(new Date(evento.data), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) ||
+      (filtroData === 'semana' && (() => {
+        const dataEvento = new Date(evento.data);
+        const hoje = new Date();
+        const diffTime = Math.abs(dataEvento.getTime() - hoje.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7;
+      })());
 
-    return matchSearch && matchTipo && matchStatus && matchLocal;
+    return matchSearch && matchTipo && matchStatus && matchLocal && matchData;
   });
 
   // Calcular estatísticas (agora baseadas em filteredEventos para refletir a pesquisa)
@@ -78,10 +140,6 @@ const RelatorioEventos = () => {
     return acc;
   }, {});
 
-  // Para maior participação e melhor avaliação, talvez seja melhor usar os dados originais
-  // antes da filtragem para estatísticas gerais, ou basear nas estatísticas dos dados filtrados.
-  // Por enquanto, mantendo baseado em filteredEventos para consistência com a tabela.
-
   const eventoComMaiorAvaliacao = filteredEventos
     .filter(e => e.mediaPontuacao !== undefined && e.mediaPontuacao !== null)
     .reduce((maxEvento, currentEvento) => {
@@ -89,9 +147,8 @@ const RelatorioEventos = () => {
     }, filteredEventos[0]);
 
   const eventoComMaisParticipantes = filteredEventos.reduce((maxEvento, currentEvento) => {
-    // Assumindo que participantes é um array e queremos a contagem de membros
-    const currentParticipantesCount = Array.isArray(currentEvento.participantes) ? currentEvento.participantes.length : 0;
-    const maxParticipantesCount = maxEvento && Array.isArray(maxEvento.participantes) ? maxEvento.participantes.length : 0;
+    const currentParticipantesCount = contarParticipantes(currentEvento); // Usar a nova função
+    const maxParticipantesCount = maxEvento ? contarParticipantes(maxEvento) : 0;
     return (currentParticipantesCount > maxParticipantesCount) ? currentEvento : maxEvento;
   }, filteredEventos[0]);
 
@@ -118,7 +175,7 @@ const RelatorioEventos = () => {
       'Hora Fim': evento.horaFim,
       'Local': evento.local,
       'Status': evento.status,
-      'Participantes': Array.isArray(evento.participantes) ? evento.participantes.length : 0,
+      'Participantes': contarParticipantes(evento), // Usar a nova função
       'Avaliação Média': evento.mediaPontuacao?.toFixed(1) || 'N/A'
     }));
 
@@ -131,7 +188,7 @@ const RelatorioEventos = () => {
     const estatisticas = [
       { 'Métrica': 'Total de Eventos', 'Valor': filteredEventos.length },
       { 'Métrica': 'Eventos Agendados', 'Valor': filteredEventos.filter(e => e.status === 'Programado' || e.status === 'Agendado').length },
-      { 'Métrica': 'Maior Participação', 'Valor': eventoComMaisParticipantes ? (Array.isArray(eventoComMaisParticipantes.participantes) ? eventoComMaisParticipantes.participantes.length : 0) : 0 },
+      { 'Métrica': 'Maior Participação', 'Valor': eventoComMaisParticipantes ? contarParticipantes(eventoComMaisParticipantes) : 0 }, // Usar a nova função
       { 'Métrica': 'Melhor Avaliação', 'Valor': eventoComMaiorAvaliacao ? (eventoComMaiorAvaliacao.mediaPontuacao?.toFixed(1) || 'N/A') : 'N/A' }
     ];
     const wsStats = XLSX.utils.json_to_sheet(estatisticas);
@@ -139,6 +196,16 @@ const RelatorioEventos = () => {
 
     // Exportar arquivo
     XLSX.writeFile(wb, 'relatorio_eventos.xlsx');
+  };
+
+  const exportarPDF = () => {
+    // Implementar exportação para PDF
+    console.log('Exportando para PDF...');
+  };
+
+  const exportarCSV = () => {
+    // Implementar exportação para CSV
+    console.log('Exportando para CSV...');
   };
 
   return (
@@ -182,7 +249,7 @@ const RelatorioEventos = () => {
               <CardContent>
                  {eventoComMaisParticipantes ? (
                   <div className="flex flex-col">
-                    <span className="text-2xl font-bold">{Array.isArray(eventoComMaisParticipantes.participantes) ? eventoComMaisParticipantes.participantes.length : 0}</span>
+                    <span className="text-2xl font-bold">{contarParticipantes(eventoComMaisParticipantes)}</span>{/* Usar a nova função */}
                     <span className="text-xs text-muted-foreground">{eventoComMaisParticipantes.nome}</span>
                   </div>
                 ) : (
@@ -268,7 +335,7 @@ const RelatorioEventos = () => {
                     value={filtroStatus}
                     onChange={(e) => setFiltroStatus(e.target.value)}
                   >
-                    <option value="">Todos</option>
+                    <option value="todos">Todos</option>
                     {[...new Set(eventos.map(e => e.status))].map(status => (
                       <option key={status} value={status}>{status}</option>
                     ))}
@@ -289,6 +356,20 @@ const RelatorioEventos = () => {
                     ))}
                   </select>
                 </div>
+                {/* Filtro por Data */}
+                <div>
+                  <label htmlFor="dataEvento" className="text-sm font-medium mb-2 block">Data</label>
+                  <select 
+                    id="dataEvento" 
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    value={filtroData}
+                    onChange={(e) => setFiltroData(e.target.value)}
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Próximos 7 dias</option>
+                  </select>
+                </div>
                 {/* Botão para limpar filtros */}
                 <Button 
                   variant="outline" 
@@ -296,8 +377,9 @@ const RelatorioEventos = () => {
                   className="w-full"
                   onClick={() => {
                     setFiltroTipo('');
-                    setFiltroStatus('');
+                    setFiltroStatus('todos');
                     setFiltroLocal('');
+                    setFiltroData('todos');
                     setSearchTerm('');
                   }}
                 >
@@ -311,15 +393,35 @@ const RelatorioEventos = () => {
         {/* Controles de Exportação */}
          {!loading && !error && filteredEventos.length > 0 && (
           <div className="flex justify-end mb-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={exportarRelatorio}
-            >
-              <Download className="w-4 h-4" />
-              Exportar Relatório
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={exportarRelatorio}
+              >
+                <Download className="w-4 h-4" />
+                Exportar Relatório
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={exportarPDF}
+              >
+                <FileText className="w-4 h-4" />
+                Exportar PDF
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={exportarCSV}
+              >
+                <Download className="w-4 h-4" />
+                Exportar CSV
+              </Button>
+            </div>
           </div>
         )}
 
@@ -364,11 +466,9 @@ const RelatorioEventos = () => {
                         <tr key={evento.id}>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{evento.nome}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.tipo}</td>
-                          {/* Exibir data formatada se for um objeto Date */}
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.data instanceof Date && !isNaN(evento.data.getTime()) ? evento.data.toLocaleDateString() : 'N/A'}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.data instanceof Date && !isNaN(evento.data.getTime()) ? format(evento.data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'N/A'}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{evento.local}</td>
-                           {/* Contar participantes se for um array */}
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{Array.isArray(evento.participantes) ? evento.participantes.length : 'N/A'}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{contarParticipantes(evento)}</td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               evento.status === 'Concluído' ? 'bg-green-100 text-green-800' :

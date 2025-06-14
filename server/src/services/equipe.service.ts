@@ -14,11 +14,14 @@ export const createEquipe = async (
   const maxMembrosInt = typeof maxmembros === 'number' && !isNaN(maxmembros) ? Math.floor(maxmembros) : 0;
   console.log('[%s] [equipeService.createEquipe] maxMembrosInt calculado:', new Date().toISOString(), maxMembrosInt);
 
+  // Garantir que integrantes seja um array
+  const integrantes = responsavel ? [responsavel] : [];
+
   const newEquipe: Equipe = {
     id,
     nome,
     responsavel: responsavel || null,
-    integrantes: responsavel ? [responsavel] : [],
+    integrantes,
     eventos: [],
     mediaPontuacao: 0,
     presencaMedia: 0,
@@ -94,12 +97,12 @@ export const updateEquipe = async (
     const values = [];
     let valueCount = 1;
     let setClause = '';
-
+    
     const allowedFields = [
         'nome', 'responsavel', 'integrantes', 'eventos', 'mediaPontuacao', 
         'presencaMedia', 'maxmembros'
     ];
-
+    
     for (const key of allowedFields) {
         if (equipeData.hasOwnProperty(key) && key !== 'id') {
             let value = (equipeData as any)[key];
@@ -127,7 +130,7 @@ export const updateEquipe = async (
     }
     
     values.push(id);
-
+    
     const query = `
       UPDATE equipes
       SET ${setClause}

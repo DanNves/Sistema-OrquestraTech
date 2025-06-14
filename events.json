@@ -1,0 +1,20 @@
+﻿
+
+id                   : fcd19522-7b06-45bf-8188-4c5d08f7c918
+nome                 : Evento para Teste 1
+data                 : 2025-06-14T03:00:00.000Z
+descricao            : 
+local                : Fazenda Grande
+equipesparticipantes : {}
+titulo               : Evento para Teste 1
+horainicio           : 09:15:00
+horafim              : 09:17:00
+tipo                 : Encontro Técnico
+status               : Concluído
+participantes        : {}
+mediapontuacao       : 0
+created_at           : 2025-06-14T12:14:41.081Z
+updated_at           : 2025-06-14T12:14:41.081Z
+
+
+

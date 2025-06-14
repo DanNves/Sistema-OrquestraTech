@@ -6,6 +6,7 @@ import { Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
+import { Dashboard } from './pages/Dashboard';
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Equipes from "./pages/Equipes";
@@ -32,7 +33,7 @@ const App = () => (
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/dashboard" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/equipes" element={<Equipes />} />
         <Route path="/eventos" element={<Eventos />} />
         <Route path="/questionarios" element={<Questionarios />} />
